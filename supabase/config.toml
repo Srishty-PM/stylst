@@ -1,1 +1,4 @@
 project_id = "dzhhrtxlmmmbhggwsbrh"
+
+[functions.ai-stylist]
+verify_jwt = false
