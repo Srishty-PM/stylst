@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const bottomNavItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/closet', icon: ShirtIcon, label: 'Closet' },
-  { to: '/match', icon: Layers, label: 'Match' },
+  { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
   { to: '/looks', icon: Heart, label: 'Looks' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
 ];
