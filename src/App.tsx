@@ -34,12 +34,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <AppLayout>{children}</AppLayout>;
 };
 
-const OnboardingRoute = () => {
+const OnboardingRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, profile, isLoading } = useAuth();
   if (isLoading) return null;
   if (!user) return <Navigate to="/auth/login" replace />;
   if (profile?.onboarding_completed) return <Navigate to="/dashboard" replace />;
-  return <Onboarding />;
+  return children ? <>{children}</> : <Onboarding />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
@@ -55,6 +55,7 @@ const AppRoutes = () => (
     <Route path="/auth/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/auth/signup" element={<PublicRoute><Signup /></PublicRoute>} />
     <Route path="/onboarding" element={<OnboardingRoute />} />
+    <Route path="/onboarding/*" element={<OnboardingRoute />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/closet" element={<ProtectedRoute><Closet /></ProtectedRoute>} />
     <Route path="/closet/add" element={<ProtectedRoute><AddClosetItem /></ProtectedRoute>} />

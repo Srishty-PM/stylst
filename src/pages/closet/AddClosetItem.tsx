@@ -1,4 +1,5 @@
 import { Upload, Loader2, Check, X, Sparkles, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAddClosetItem, uploadClosetImage } from '@/hooks/useClosetItems';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useFreemiumGates } from '@/hooks/useFreemiumGates';
+import UpgradeModal from '@/components/UpgradeModal';
 
 interface AnalyzedItem {
   index: number;
@@ -34,6 +37,8 @@ const AddClosetItem = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const addItem = useAddClosetItem();
+  const { canAddClosetItem, closetRemaining, closetLimit } = useFreemiumGates();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [step, setStep] = useState<'upload' | 'analyzing' | 'review' | 'saving'>('upload');
   const [items, setItems] = useState<AnalyzedItem[]>([]);
@@ -63,6 +68,10 @@ const AddClosetItem = () => {
   };
 
   const handleAnalyze = async () => {
+    if (!canAddClosetItem) {
+      setShowUpgrade(true);
+      return;
+    }
     if (!user || items.length === 0) return;
     setStep('analyzing');
 
@@ -367,6 +376,24 @@ const AddClosetItem = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {!canAddClosetItem && (
+        <Card className="border-warning/30 bg-warning/5 mt-4">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Free tier limit reached ({closetLimit} items)</p>
+              <p className="text-xs text-muted-foreground">Upgrade for unlimited closet items.</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setShowUpgrade(true)}>Upgrade</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <UpgradeModal
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+        reason={`You've reached the free tier limit (${closetLimit} items). Upgrade to add unlimited items.`}
+      />
     </div>
   );
 };
