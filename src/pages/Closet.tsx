@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_CLOSET_ITEMS, CATEGORIES } from '@/lib/mock-data';
+import { CATEGORIES } from '@/lib/mock-data';
+import { useClosetItems } from '@/hooks/useClosetItems';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, ShirtIcon } from 'lucide-react';
+import { Plus, ShirtIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const statusColors: Record<string, string> = {
@@ -17,9 +17,7 @@ const statusColors: Record<string, string> = {
 
 const Closet = () => {
   const [category, setCategory] = useState('All');
-  const items = MOCK_CLOSET_ITEMS.filter(
-    i => category === 'All' || i.category.toLowerCase() === category.toLowerCase()
-  );
+  const { data: items = [], isLoading } = useClosetItems(category);
 
   return (
     <div className="space-y-6">
@@ -46,7 +44,11 @@ const Closet = () => {
       </div>
 
       {/* Grid */}
-      {items.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-16">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto animate-spin" />
+        </div>
+      ) : items.length === 0 ? (
         <div className="text-center py-16">
           <ShirtIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-lg font-medium text-foreground mb-2">Your closet is empty</p>

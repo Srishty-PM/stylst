@@ -1,27 +1,59 @@
-import { Upload, Plus, ShirtIcon } from 'lucide-react';
+import { Upload, Plus, ShirtIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '@/lib/mock-data';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAddClosetItem, uploadClosetImage } from '@/hooks/useClosetItems';
+import { toast } from '@/hooks/use-toast';
 
 const AddClosetItem = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const addItem = useAddClosetItem();
+
   const [step, setStep] = useState(0);
-  const [images, setImages] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [price, setPrice] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const urls = Array.from(files).map(f => URL.createObjectURL(f));
-    setImages(prev => [...prev, ...urls]);
+    const newFiles = e.target.files;
+    if (!newFiles) return;
+    const arr = Array.from(newFiles);
+    setFiles(prev => [...prev, ...arr]);
+    setPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
+  };
+
+  const handleSave = async () => {
+    if (!user || !files.length) return;
+    setSaving(true);
+    try {
+      const imageUrl = await uploadClosetImage(user.id, files[0]);
+      await addItem.mutateAsync({
+        user_id: user.id,
+        name,
+        category,
+        image_url: imageUrl,
+        brand: brand || null,
+        purchase_price: price ? parseFloat(price) : null,
+      });
+      toast({ title: 'Item added!', description: `${name} has been added to your closet.` });
+      navigate('/closet');
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -33,7 +65,7 @@ const AddClosetItem = () => {
 
       {/* Progress */}
       <div className="flex gap-2">
-        {['Upload', 'AI Tag', 'Details'].map((s, i) => (
+        {['Upload', 'Details'].map((s, i) => (
           <div key={s} className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-accent' : 'bg-border'}`} />
         ))}
       </div>
@@ -49,9 +81,9 @@ const AddClosetItem = () => {
             <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
           </label>
 
-          {images.length > 0 && (
+          {previews.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
-              {images.map((url, i) => (
+              {previews.map((url, i) => (
                 <div key={i} className="aspect-square rounded-lg overflow-hidden">
                   <img src={url} alt={`Upload ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
@@ -59,31 +91,13 @@ const AddClosetItem = () => {
             </div>
           )}
 
-          <Button className="w-full" disabled={images.length === 0} onClick={() => setStep(1)}>
+          <Button className="w-full" disabled={files.length === 0} onClick={() => setStep(1)}>
             Next
           </Button>
         </motion.div>
       )}
 
       {step === 1 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mx-auto mb-4">
-                <ShirtIcon className="w-6 h-6 text-accent animate-pulse" />
-              </div>
-              <p className="font-medium text-foreground mb-1">AI is analyzing your item...</p>
-              <p className="text-sm text-muted-foreground">Detecting category, colors, and more</p>
-            </CardContent>
-          </Card>
-          <p className="text-xs text-muted-foreground text-center">AI tagging requires backend. Skipping to manual entry.</p>
-          <Button className="w-full" onClick={() => { setName('Uploaded Item'); setCategory('tops'); setStep(2); }}>
-            Continue to Details
-          </Button>
-        </motion.div>
-      )}
-
-      {step === 2 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="item-name">Item Name *</Label>
@@ -108,8 +122,9 @@ const AddClosetItem = () => {
             <Label htmlFor="price">Purchase Price (£)</Label>
             <Input id="price" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" />
           </div>
-          <Button className="w-full" disabled={!name || !category}>
-            <Plus className="w-4 h-4 mr-1" /> Add to Closet
+          <Button className="w-full" disabled={!name || !category || saving} onClick={handleSave}>
+            {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+            {saving ? 'Saving...' : 'Add to Closet'}
           </Button>
         </motion.div>
       )}

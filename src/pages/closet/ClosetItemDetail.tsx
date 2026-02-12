@@ -1,9 +1,10 @@
-import { useParams, Link } from 'react-router-dom';
-import { MOCK_CLOSET_ITEMS, MOCK_LOOKS } from '@/lib/mock-data';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useClosetItem, useDeleteClosetItem, useUpdateClosetItem } from '@/hooks/useClosetItems';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Check, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Trash2, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const statusColors: Record<string, string> = {
   ready: 'bg-success text-success-foreground',
@@ -14,7 +15,18 @@ const statusColors: Record<string, string> = {
 
 const ClosetItemDetail = () => {
   const { itemId } = useParams();
-  const item = MOCK_CLOSET_ITEMS.find(i => i.id === itemId);
+  const navigate = useNavigate();
+  const { data: item, isLoading } = useClosetItem(itemId);
+  const deleteItem = useDeleteClosetItem();
+  const updateItem = useUpdateClosetItem();
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-16">
+        <Loader2 className="w-8 h-8 text-muted-foreground mx-auto animate-spin" />
+      </div>
+    );
+  }
 
   if (!item) {
     return (
@@ -25,10 +37,32 @@ const ClosetItemDetail = () => {
     );
   }
 
-  const looks = MOCK_LOOKS.filter(l => l.closet_item_ids.includes(item.id));
   const costPerWear = item.purchase_price && item.times_worn > 0
-    ? (item.purchase_price / item.times_worn).toFixed(2)
+    ? (Number(item.purchase_price) / item.times_worn).toFixed(2)
     : null;
+
+  const handleDelete = async () => {
+    try {
+      await deleteItem.mutateAsync(item.id);
+      toast({ title: 'Deleted', description: `${item.name} removed from your closet.` });
+      navigate('/closet');
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleMarkWorn = async () => {
+    try {
+      await updateItem.mutateAsync({
+        id: item.id,
+        times_worn: item.times_worn + 1,
+        last_worn_date: new Date().toISOString().split('T')[0],
+      });
+      toast({ title: 'Updated', description: `${item.name} marked as worn.` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -54,34 +88,19 @@ const ClosetItemDetail = () => {
             <div><span className="text-muted-foreground">Times worn</span><p className="font-semibold text-foreground">{item.times_worn}</p></div>
             <div><span className="text-muted-foreground">Purchase price</span><p className="font-semibold text-foreground">{item.purchase_price ? `£${item.purchase_price}` : '—'}</p></div>
             {costPerWear && <div><span className="text-muted-foreground">Cost per wear</span><p className="font-semibold text-accent">£{costPerWear}</p></div>}
-            <div><span className="text-muted-foreground">Tags</span><p className="font-semibold text-foreground">{item.tags.join(', ') || '—'}</p></div>
+            <div><span className="text-muted-foreground">Tags</span><p className="font-semibold text-foreground">{item.tags?.join(', ') || '—'}</p></div>
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1"><Check className="w-4 h-4 mr-1" /> Mark as Worn</Button>
-            <Button variant="outline" size="icon"><Edit2 className="w-4 h-4" /></Button>
-            <Button variant="outline" size="icon" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+            <Button className="flex-1" onClick={handleMarkWorn} disabled={updateItem.isPending}>
+              {updateItem.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />} Mark as Worn
+            </Button>
+            <Button variant="outline" size="icon" className="text-destructive" onClick={handleDelete} disabled={deleteItem.isPending}>
+              {deleteItem.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            </Button>
           </div>
         </CardContent>
       </Card>
-
-      {looks.length > 0 && (
-        <div>
-          <h2 className="font-display text-lg font-semibold text-foreground mb-3">Appears in {looks.length} outfit{looks.length > 1 ? 's' : ''}</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {looks.map(look => (
-              <Link key={look.id} to={`/looks/${look.id}`}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <p className="text-sm font-medium text-foreground">{look.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{look.occasion}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
