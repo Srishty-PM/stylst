@@ -39,7 +39,7 @@ export const useClosetItem = (itemId: string | undefined) => {
         .from('closet_items')
         .select('*')
         .eq('id', itemId!)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data as ClosetItem;
     },
