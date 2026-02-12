@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { MOCK_CLOSET_ITEMS, MOCK_LOOKS } from '@/lib/mock-data';
+import { useClosetItems } from '@/hooks/useClosetItems';
+import { useInspirations } from '@/hooks/useInspirations';
+import { useLooks } from '@/hooks/useLooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart } from 'lucide-react';
@@ -17,6 +19,14 @@ const Dashboard = () => {
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
+  const { data: closetItems } = useClosetItems();
+  const { data: inspirations } = useInspirations();
+  const { data: looks } = useLooks();
+
+  const closetCount = closetItems?.length ?? 0;
+  const looksCount = looks?.length ?? 0;
+  const inspoCount = inspirations?.length ?? 0;
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -28,9 +38,9 @@ const Dashboard = () => {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Closet Items', value: MOCK_CLOSET_ITEMS.length, icon: ShirtIcon },
-          { label: 'Saved Looks', value: MOCK_LOOKS.length, icon: Heart },
-          { label: 'Inspiration', value: 24, icon: Sparkles },
+          { label: 'Closet Items', value: closetCount, icon: ShirtIcon },
+          { label: 'Saved Looks', value: looksCount, icon: Heart },
+          { label: 'Inspiration', value: inspoCount, icon: Sparkles },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <Card>
@@ -66,26 +76,26 @@ const Dashboard = () => {
           <h2 className="font-display text-xl font-semibold text-foreground">Recent Looks</h2>
           <Link to="/looks" className="text-sm text-accent font-medium">View all</Link>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-          {MOCK_LOOKS.map(look => {
-            const items = look.closet_item_ids.map(id => MOCK_CLOSET_ITEMS.find(i => i.id === id)).filter(Boolean);
-            return (
+        {looks && looks.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
+            {looks.slice(0, 5).map(look => (
               <Link key={look.id} to={`/looks/${look.id}`} className="flex-shrink-0 w-48">
                 <Card className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="grid grid-cols-2 aspect-square">
-                    {items.slice(0, 4).map((item, idx) => (
-                      <img key={idx} src={item!.image_url} alt={item!.name} className="w-full h-full object-cover" />
-                    ))}
-                  </div>
                   <CardContent className="p-3">
                     <p className="text-sm font-medium text-foreground truncate">{look.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{look.occasion}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{look.occasion || 'No occasion'}</p>
                   </CardContent>
                 </Card>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground text-sm">
+              No looks yet. <Link to="/match" className="text-accent font-medium hover:underline">Create your first look</Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Freemium Banner */}
