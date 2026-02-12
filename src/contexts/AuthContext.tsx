@@ -8,6 +8,7 @@ interface Profile {
   full_name: string | null;
   subscription_tier: string;
   onboarding_completed: boolean;
+  onboarding_step: number;
   pinterest_connected: boolean;
   style_goals: string[] | null;
 }
@@ -20,6 +21,7 @@ interface AuthContextType {
   signup: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  updateOnboardingStep: (step: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -38,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, subscription_tier, onboarding_completed, pinterest_connected, style_goals')
+      .select('id, email, full_name, subscription_tier, onboarding_completed, onboarding_step, pinterest_connected, style_goals')
       .eq('id', userId)
       .single();
     setProfile(data);
@@ -97,8 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(prev => prev ? { ...prev, onboarding_completed: true } : prev);
   }, [user]);
 
+  const updateOnboardingStep = useCallback(async (step: number) => {
+    if (!user) return;
+    await supabase.from('profiles').update({ onboarding_step: step }).eq('id', user.id);
+    setProfile(prev => prev ? { ...prev, onboarding_step: step } : prev);
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, login, signup, logout, completeOnboarding }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, login, signup, logout, completeOnboarding, updateOnboardingStep }}>
       {children}
     </AuthContext.Provider>
   );
