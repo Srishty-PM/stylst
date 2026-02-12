@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInspirations } from '@/hooks/useInspirations';
 import { useAutoMatch, AutoMatchResult, MissingItem } from '@/hooks/useAutoMatch';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
+import { useClosetItems } from '@/hooks/useClosetItems';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +15,12 @@ import {
 } from '@/components/ui/dialog';
 import {
   Sparkles, Loader2, ArrowLeft, Check, CalendarPlus, ShoppingBag,
-  HelpCircle, ChevronRight, Save,
+  HelpCircle, ChevronRight, Save, ArrowLeftRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import ItemSwapSheet from '@/components/ItemSwapSheet';
 
 type PageState = 'idle' | 'analyzing' | 'results' | 'saving' | 'saved';
 
@@ -29,11 +31,16 @@ const InspirationDetail = () => {
   const { data: inspirations = [] } = useInspirations();
   const autoMatch = useAutoMatch();
   const addSchedule = useAddScheduledOutfit();
+  const { data: closetItems = [] } = useClosetItems();
 
   const inspiration = inspirations.find(i => i.id === inspirationId);
 
   const [pageState, setPageState] = useState<PageState>('idle');
   const [matchResult, setMatchResult] = useState<AutoMatchResult | null>(null);
+
+  // Swap state: track overridden items by index
+  const [swappedItems, setSwappedItems] = useState<Record<number, string>>({});
+  const [swapIndex, setSwapIndex] = useState<number | null>(null);
 
   // Schedule dialog state
   const [showSchedule, setShowSchedule] = useState(false);
@@ -102,9 +109,24 @@ const InspirationDetail = () => {
     );
   }
 
-  const matchedItems = matchResult?.matched_items || [];
+  // Resolve matched items with swaps applied
+  const matchedItems = (matchResult?.matched_items || []).map((original, i) => {
+    const swapId = swappedItems[i];
+    if (!swapId) return original;
+    const swapped = closetItems.find(c => c.id === swapId);
+    if (!swapped) return original;
+    return {
+      id: swapped.id,
+      name: swapped.name,
+      category: swapped.category,
+      image_url: swapped.image_url_cleaned || swapped.image_url,
+      colors: swapped.colors,
+    };
+  });
   const missingItems = matchResult?.missing_items || [];
   const totalItems = matchedItems.length + missingItems.length;
+  const usedItemIds = matchedItems.map(m => m.id);
+  const swapTarget = swapIndex !== null ? matchedItems[swapIndex] : null;
 
   return (
     <div className="space-y-6 pb-8">
@@ -194,7 +216,10 @@ const InspirationDetail = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.08 }}
                   >
-                    <Link to={`/closet/${item.id}`}>
+                    <button
+                      className="w-full text-left"
+                      onClick={() => setSwapIndex(i)}
+                    >
                       <div className="aspect-square rounded-xl overflow-hidden border-2 border-accent/30 shadow-sm relative group">
                         <img
                           src={item.image_url}
@@ -207,11 +232,16 @@ const InspirationDetail = () => {
                             <Check className="w-3 h-3 text-accent-foreground" />
                           </div>
                         </div>
+                        <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="w-5 h-5 rounded-full bg-background/80 flex items-center justify-center">
+                            <ArrowLeftRight className="w-3 h-3 text-foreground" />
+                          </div>
+                        </div>
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
                           <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
                         </div>
                       </div>
-                    </Link>
+                    </button>
                     <p className="text-[10px] text-muted-foreground mt-1 capitalize truncate">{item.category}</p>
                   </motion.div>
                 ))}
@@ -338,6 +368,22 @@ const InspirationDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Item Swap Sheet */}
+      <ItemSwapSheet
+        open={swapIndex !== null}
+        onOpenChange={(open) => { if (!open) setSwapIndex(null); }}
+        currentItem={swapTarget}
+        closetItems={closetItems}
+        usedItemIds={usedItemIds}
+        onSwap={(newId) => {
+          if (swapIndex !== null) {
+            setSwappedItems(prev => ({ ...prev, [swapIndex]: newId }));
+            setSwapIndex(null);
+            toast({ title: 'Item swapped!', description: 'Tap "Save This Outfit" to keep your changes.' });
+          }
+        }}
+      />
     </div>
   );
 };
