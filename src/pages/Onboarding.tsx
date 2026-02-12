@@ -45,13 +45,23 @@ interface MatchResult {
   reasoning: string;
 }
 
+const STEP_MAP: Record<number, Step> = {
+  0: 'welcome',
+  1: 'inspiration',
+  2: 'closet',
+  3: 'review',
+  4: 'matching',
+  5: 'calendar',
+};
+
 const Onboarding = () => {
-  const { user, completeOnboarding } = useAuth();
+  const { user, profile, completeOnboarding, updateOnboardingStep } = useAuth();
   const navigate = useNavigate();
   const addInspo = useAddInspiration();
   const addClosetItem = useAddClosetItem();
 
-  const [step, setStep] = useState<Step>('welcome');
+  const initialStep = STEP_MAP[profile?.onboarding_step ?? 0] || 'welcome';
+  const [step, setStep] = useState<Step>(initialStep);
 
   // Inspiration state
   const [inspoFiles, setInspoFiles] = useState<File[]>([]);
@@ -97,6 +107,7 @@ const Onboarding = () => {
     }
     setUploadedInspoIds(ids);
     setInspoUploading(false);
+    await updateOnboardingStep(2);
     setStep('closet');
   };
 
@@ -122,8 +133,8 @@ const Onboarding = () => {
 
   const handleAnalyzeCloset = async () => {
     if (!user || closetItems.length === 0) return;
+    await updateOnboardingStep(2);
     setStep('analyzing');
-
     const updated = [...closetItems];
 
     // Upload all images
@@ -172,6 +183,7 @@ const Onboarding = () => {
     }
 
     setClosetItems([...updated]);
+    await updateOnboardingStep(3);
     setStep('review');
   };
 
@@ -308,9 +320,12 @@ const Onboarding = () => {
                       </div>
                     ))}
                   </div>
-                  <Button className="w-full" onClick={() => setStep('inspiration')}>
+                  <Button className="w-full" onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
                     Let's Go <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors" onClick={handleFinish}>
+                    I'll do this later
+                  </button>
                 </motion.div>
               )}
 
@@ -435,9 +450,9 @@ const Onboarding = () => {
                         <img src={item.preview} alt="" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
                           {item.status === 'uploading' && <Loader2 className="w-5 h-5 text-background animate-spin" />}
-                          {item.status === 'ready' && <Check className="w-5 h-5 text-green-400" />}
-                          {item.status === 'review' && <span className="text-[10px] text-amber-300 font-bold">REVIEW</span>}
-                          {item.status === 'error' && <X className="w-5 h-5 text-red-400" />}
+                          {item.status === 'ready' && <Check className="w-5 h-5 text-success" />}
+                          {item.status === 'review' && <span className="text-[10px] text-warning font-bold">REVIEW</span>}
+                          {item.status === 'error' && <X className="w-5 h-5 text-destructive" />}
                         </div>
                       </div>
                     ))}
@@ -455,11 +470,11 @@ const Onboarding = () => {
 
                   {closetItems.filter(i => i.status === 'review').length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Needs your input
+                      <p className="text-xs font-semibold uppercase tracking-wide text-warning flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-warning" /> Needs your input
                       </p>
                       {closetItems.filter(i => i.status === 'review').map(item => (
-                        <div key={item.id} className="flex gap-3 p-3 bg-card border border-amber-200 rounded-lg">
+                        <div key={item.id} className="flex gap-3 p-3 bg-card border border-warning/30 rounded-lg">
                           <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
                             <img src={item.imageUrl || item.preview} alt="" className="w-full h-full object-cover" />
                           </div>
@@ -486,8 +501,8 @@ const Onboarding = () => {
 
                   {closetItems.filter(i => i.status === 'ready').length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-green-600 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Ready
+                      <p className="text-xs font-semibold uppercase tracking-wide text-success flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success" /> Ready
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         {closetItems.filter(i => i.status === 'ready').map(item => (
@@ -561,7 +576,7 @@ const Onboarding = () => {
               {/* DONE (no matches case) */}
               {step === 'done' && (
                 <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 text-center py-4">
-                  <Check className="w-12 h-12 text-green-500 mx-auto" />
+                  <Check className="w-12 h-12 text-success mx-auto" />
                   <div>
                     <h2 className="font-display text-2xl font-bold text-foreground mb-2">You're all set!</h2>
                     <p className="text-sm text-muted-foreground">

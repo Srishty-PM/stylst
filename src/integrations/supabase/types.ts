@@ -16,14 +16,17 @@ export type Database = {
     Tables: {
       closet_items: {
         Row: {
+          ai_confidence: number | null
           brand: string | null
           category: string
           colors: string[] | null
           created_at: string
           id: string
           image_url: string
+          image_url_cleaned: string | null
           last_worn_date: string | null
           name: string
+          needs_review: boolean | null
           purchase_price: number | null
           status: string
           subcategory: string | null
@@ -33,14 +36,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_confidence?: number | null
           brand?: string | null
           category: string
           colors?: string[] | null
           created_at?: string
           id?: string
           image_url: string
+          image_url_cleaned?: string | null
           last_worn_date?: string | null
           name: string
+          needs_review?: boolean | null
           purchase_price?: number | null
           status?: string
           subcategory?: string | null
@@ -50,14 +56,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_confidence?: number | null
           brand?: string | null
           category?: string
           colors?: string[] | null
           created_at?: string
           id?: string
           image_url?: string
+          image_url_cleaned?: string | null
           last_worn_date?: string | null
           name?: string
+          needs_review?: boolean | null
           purchase_price?: number | null
           status?: string
           subcategory?: string | null
@@ -154,6 +163,7 @@ export type Database = {
           notes: string | null
           occasion: string | null
           season: string | null
+          times_worn: number | null
           updated_at: string
           user_id: string
         }
@@ -168,6 +178,7 @@ export type Database = {
           notes?: string | null
           occasion?: string | null
           season?: string | null
+          times_worn?: number | null
           updated_at?: string
           user_id: string
         }
@@ -182,6 +193,7 @@ export type Database = {
           notes?: string | null
           occasion?: string | null
           season?: string | null
+          times_worn?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -202,6 +214,7 @@ export type Database = {
           full_name: string | null
           id: string
           onboarding_completed: boolean
+          onboarding_step: number | null
           pinterest_access_token: string | null
           pinterest_connected: boolean
           pinterest_refresh_token: string | null
@@ -217,6 +230,7 @@ export type Database = {
           full_name?: string | null
           id: string
           onboarding_completed?: boolean
+          onboarding_step?: number | null
           pinterest_access_token?: string | null
           pinterest_connected?: boolean
           pinterest_refresh_token?: string | null
@@ -232,6 +246,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           onboarding_completed?: boolean
+          onboarding_step?: number | null
           pinterest_access_token?: string | null
           pinterest_connected?: boolean
           pinterest_refresh_token?: string | null
