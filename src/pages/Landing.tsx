@@ -114,26 +114,19 @@ const Landing = () => {
       </section>
 
       {/* CTA */}
-      <section className="relative py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-95" />
-        <div className="relative z-10 max-w-3xl mx-auto text-center px-6">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-            <h3 className="font-display text-4xl md:text-6xl font-light text-primary-foreground italic leading-tight mb-8">
-              Your closet is full.<br />Your style shouldn't be empty.
-            </h3>
-            <p className="text-primary-foreground/70 text-lg mb-12 font-light">
-              Join thousands who dress with intention — not stress.
-            </p>
-            <Link to="/auth/signup">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground hover:text-primary rounded-none px-14 py-7 text-xs uppercase tracking-[0.25em] font-semibold transition-all duration-300"
-              >
-                Get Started Free
-              </Button>
-            </Link>
-          </motion.div>
+      <section className="relative py-20 overflow-hidden flex justify-center px-6">
+        <div className="relative max-w-2xl w-full rounded-sm overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-95" />
+          <div className="relative z-10 text-center px-8 py-16">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <h3 className="font-display text-3xl md:text-5xl font-light text-primary-foreground italic leading-tight mb-4">
+                Your closet is full.<br />Your style shouldn't be empty.
+              </h3>
+              <p className="text-primary-foreground/70 text-base font-light">
+                Join thousands who dress with intention — not stress.
+              </p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
