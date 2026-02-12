@@ -95,20 +95,21 @@ const Landing = () => {
 
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="group relative bg-card rounded-sm p-5 md:p-8 border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-500">
-                <f.icon className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="font-display text-sm md:text-lg font-light text-foreground mb-2 uppercase tracking-[0.2em]">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-xs md:text-sm font-light tracking-wide">{f.desc}</p>
-            </motion.div>
+            <Link to="/auth/signup" key={f.title}>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="group relative bg-card rounded-sm p-5 md:p-8 border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 cursor-pointer h-full"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-500">
+                  <f.icon className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="font-display text-sm md:text-lg font-light text-foreground mb-2 uppercase tracking-[0.2em]">{f.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-xs md:text-sm font-light tracking-wide">{f.desc}</p>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </section>
