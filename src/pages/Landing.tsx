@@ -53,15 +53,12 @@ const Landing = () => {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="text-center max-w-4xl"
           >
-            <p className="text-accent text-xs tracking-[0.4em] uppercase font-semibold mb-8">
-              AI-Powered Personal Styling
-            </p>
             <h2 className="font-display text-5xl md:text-7xl lg:text-[6.5rem] font-light text-primary-foreground leading-[0.9] mb-8">
-              Your wardrobe,<br />
-              <span className="italic font-normal">redefined</span>
+              From saved<br />
+              <span className="italic font-normal">to Styled.</span>
             </h2>
-            <p className="text-primary-foreground/70 text-base md:text-lg max-w-md mx-auto mb-12 font-light leading-relaxed">
-              Capture inspiration. Let AI match your closet. Dress with confidence every single day.
+            <p className="text-primary-foreground/70 text-base md:text-lg max-w-lg mx-auto mb-12 font-light leading-relaxed">
+              Sync your boards, digitize your wardrobe, and let Stylst create outfits you can wear today.
             </p>
             <Link to="/auth/signup">
               <Button size="lg" className="bg-primary hover:bg-primary/90 rounded-none px-14 py-7 text-xs uppercase tracking-[0.25em] font-semibold shadow-2xl shadow-primary/30 transition-all duration-300 hover:shadow-primary/50 hover:scale-[1.02]">
