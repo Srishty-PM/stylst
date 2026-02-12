@@ -5,18 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signup(email, password, fullName);
-    navigate('/onboarding');
+    setLoading(true);
+    const { error } = await signup(email, password, fullName);
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Signup failed', description: error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Check your email', description: 'We sent you a confirmation link to verify your account.' });
+    }
   };
 
   return (
@@ -41,7 +50,9 @@ const Signup = () => {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full">Create Account</Button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating account...' : 'Create Account'}
+            </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
             Already have an account? <Link to="/auth/login" className="text-accent font-medium hover:underline">Sign in</Link>

@@ -11,7 +11,7 @@ import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,7 +29,7 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Full Name</Label>
-            <Input defaultValue={user?.full_name} />
+            <Input defaultValue={profile?.full_name || ''} />
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
@@ -44,11 +44,11 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Subscription</CardTitle>
-            <Badge variant="secondary" className="capitalize">{user?.subscription_tier || 'free'}</Badge>
+            <Badge variant="secondary" className="capitalize">{profile?.subscription_tier || 'free'}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {user?.subscription_tier === 'free' ? (
+          {profile?.subscription_tier === 'free' ? (
             <>
               <p className="text-sm text-muted-foreground">Upgrade to unlock AI Stylist, unlimited items, and Pinterest sync.</p>
               <div className="grid grid-cols-2 gap-3">
@@ -83,8 +83,8 @@ const Settings = () => {
               <p className="text-sm font-medium text-foreground">Pinterest</p>
               <p className="text-xs text-muted-foreground">Sync your fashion boards</p>
             </div>
-            <Badge variant={user?.pinterest_connected ? 'default' : 'secondary'}>
-              {user?.pinterest_connected ? 'Connected' : 'Not Connected'}
+            <Badge variant={profile?.pinterest_connected ? 'default' : 'secondary'}>
+              {profile?.pinterest_connected ? 'Connected' : 'Not Connected'}
             </Badge>
           </div>
           <Separator />
