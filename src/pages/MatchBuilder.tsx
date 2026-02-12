@@ -4,6 +4,8 @@ import { CATEGORIES, OCCASIONS } from '@/lib/mock-data';
 import { useClosetItems } from '@/hooks/useClosetItems';
 import { useAddLook } from '@/hooks/useLooks';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFreemiumGates } from '@/hooks/useFreemiumGates';
+import UpgradeModal from '@/components/UpgradeModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +21,8 @@ const MatchBuilder = () => {
   const navigate = useNavigate();
   const { data: closetItems = [] } = useClosetItems();
   const addLook = useAddLook();
+  const { canCreateLook, looksRemaining, looksLimit } = useFreemiumGates();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
@@ -36,6 +40,10 @@ const MatchBuilder = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!canCreateLook) {
+      setShowUpgrade(true);
+      return;
+    }
     try {
       await addLook.mutateAsync({
         user_id: user.id,
@@ -155,6 +163,12 @@ const MatchBuilder = () => {
           </div>
         </motion.div>
       )}
+
+      <UpgradeModal
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+        reason={`You've used your ${looksLimit} free manual outfits this month. Upgrade for unlimited.`}
+      />
     </div>
   );
 };
