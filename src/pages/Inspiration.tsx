@@ -66,20 +66,20 @@ const Inspiration = () => {
             <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
               <div className="relative rounded-xl overflow-hidden group break-inside-avoid cursor-pointer" onClick={() => navigate(`/inspiration/${item.id}`)}>
                 <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100" onClick={e => e.stopPropagation()}>
-                  <div className="flex gap-1">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100 pointer-events-none">
+                  <div className="flex gap-1 pointer-events-auto">
                     {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
                     {item.description && <Badge variant="outline" className="text-[10px] max-w-[120px] truncate">{item.description}</Badge>}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 pointer-events-auto">
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={() => setAutoMatchItem({ id: item.id, image_url: item.image_url })}
+                      onClick={(e) => { e.stopPropagation(); setAutoMatchItem({ id: item.id, image_url: item.image_url }); }}
                     >
                       <Sparkles className="w-3 h-3 mr-1" /> Auto
                     </Button>
-                    <Link to={`/match/${item.id}`}>
+                    <Link to={`/match/${item.id}`} onClick={e => e.stopPropagation()}>
                       <Button size="sm" variant="secondary">Manual</Button>
                     </Link>
                     <Button
