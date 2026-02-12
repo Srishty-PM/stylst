@@ -46,6 +46,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, isLoading } = useAuth();
   if (isLoading) return null;
   if (user && profile?.onboarding_completed) return <Navigate to="/dashboard" replace />;
+  if (user && profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 };
 
