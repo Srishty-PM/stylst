@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, ImageIcon, Loader2, Trash2, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useInspirations, useDeleteInspiration } from '@/hooks/useInspirations';
 import { toast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ import AutoMatchDialog from '@/components/AutoMatchDialog';
 
 const Inspiration = () => {
   const [tab, setTab] = useState('all');
+  const navigate = useNavigate();
   const { data: items = [], isLoading } = useInspirations();
   const deleteInspo = useDeleteInspiration();
   const [autoMatchItem, setAutoMatchItem] = useState<{ id: string; image_url: string } | null>(null);
@@ -63,9 +64,9 @@ const Inspiration = () => {
         <div className="columns-2 md:columns-3 gap-3 space-y-3">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
-              <div className="relative rounded-xl overflow-hidden group break-inside-avoid">
+              <div className="relative rounded-xl overflow-hidden group break-inside-avoid cursor-pointer" onClick={() => navigate(`/inspiration/${item.id}`)}>
                 <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100" onClick={e => e.stopPropagation()}>
                   <div className="flex gap-1">
                     {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
                     {item.description && <Badge variant="outline" className="text-[10px] max-w-[120px] truncate">{item.description}</Badge>}
