@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import ItemSwapSheet from '@/components/ItemSwapSheet';
+import ShoppingSheet from '@/components/ShoppingSheet';
 
 type PageState = 'idle' | 'analyzing' | 'results' | 'saving' | 'saved';
 
@@ -41,6 +42,9 @@ const InspirationDetail = () => {
   // Swap state: track overridden items by index
   const [swappedItems, setSwappedItems] = useState<Record<number, string>>({});
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
+
+  // Shopping state
+  const [shoppingItem, setShoppingItem] = useState<MissingItem | null>(null);
 
   // Schedule dialog state
   const [showSchedule, setShowSchedule] = useState(false);
@@ -256,12 +260,7 @@ const InspirationDetail = () => {
                   >
                     <button
                       className="w-full text-left"
-                      onClick={() => {
-                        toast({
-                          title: '🛍️ Shopping coming soon!',
-                          description: `We'll help you find the perfect ${item.name}. This feature is coming soon!`,
-                        });
-                      }}
+                      onClick={() => setShoppingItem(item)}
                     >
                       <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative group hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
                         <HelpCircle className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
@@ -383,6 +382,13 @@ const InspirationDetail = () => {
             toast({ title: 'Item swapped!', description: 'Tap "Save This Outfit" to keep your changes.' });
           }
         }}
+      />
+
+      {/* Shopping Sheet */}
+      <ShoppingSheet
+        open={shoppingItem !== null}
+        onOpenChange={(open) => { if (!open) setShoppingItem(null); }}
+        item={shoppingItem}
       />
     </div>
   );
