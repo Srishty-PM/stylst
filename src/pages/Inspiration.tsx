@@ -3,16 +3,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { Plus, ImageIcon, Loader2, Trash2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useInspirations, useDeleteInspiration } from '@/hooks/useInspirations';
 import { toast } from '@/hooks/use-toast';
+import AutoMatchDialog from '@/components/AutoMatchDialog';
 
 const Inspiration = () => {
   const [tab, setTab] = useState('all');
   const { data: items = [], isLoading } = useInspirations();
   const deleteInspo = useDeleteInspiration();
+  const [autoMatchItem, setAutoMatchItem] = useState<{ id: string; image_url: string } | null>(null);
 
   const filtered = tab === 'all' ? items :
     tab === 'url' ? items.filter(i => i.source_url) :
@@ -61,31 +63,47 @@ const Inspiration = () => {
         <div className="columns-2 md:columns-3 gap-3 space-y-3">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
-              <Link to={`/match/${item.id}`}>
-                <div className="relative rounded-xl overflow-hidden group break-inside-avoid">
-                  <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100">
-                    <div className="flex gap-1">
-                      {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
-                      {item.description && <Badge variant="outline" className="text-[10px] max-w-[120px] truncate">{item.description}</Badge>}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="secondary">Match</Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={(e) => handleDelete(e, item.id)}
-                        disabled={deleteInspo.isPending}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
+              <div className="relative rounded-xl overflow-hidden group break-inside-avoid">
+                <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100">
+                  <div className="flex gap-1">
+                    {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
+                    {item.description && <Badge variant="outline" className="text-[10px] max-w-[120px] truncate">{item.description}</Badge>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setAutoMatchItem({ id: item.id, image_url: item.image_url })}
+                    >
+                      <Sparkles className="w-3 h-3 mr-1" /> Auto
+                    </Button>
+                    <Link to={`/match/${item.id}`}>
+                      <Button size="sm" variant="secondary">Manual</Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={(e) => handleDelete(e, item.id)}
+                      disabled={deleteInspo.isPending}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
-              </Link>
+              </div>
             </motion.div>
           ))}
         </div>
+      )}
+
+      {autoMatchItem && (
+        <AutoMatchDialog
+          open={!!autoMatchItem}
+          onOpenChange={(open) => !open && setAutoMatchItem(null)}
+          inspirationId={autoMatchItem.id}
+          inspirationImage={autoMatchItem.image_url}
+        />
       )}
     </div>
   );
