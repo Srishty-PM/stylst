@@ -7,9 +7,9 @@ import { Sparkles, Lock } from 'lucide-react';
 import { useState } from 'react';
 
 const AIStylist = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [prompt, setPrompt] = useState('');
-  const isPremium = user?.subscription_tier !== 'free';
+  const isPremium = profile?.subscription_tier !== 'free';
 
   if (!isPremium) {
     return (

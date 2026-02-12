@@ -14,8 +14,8 @@ const quickActions = [
 ];
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const firstName = user?.full_name?.split(' ')[0] || 'there';
+  const { profile } = useAuth();
+  const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
   return (
     <div className="space-y-8">
@@ -89,7 +89,7 @@ const Dashboard = () => {
       </div>
 
       {/* Freemium Banner */}
-      {user?.subscription_tier === 'free' && (
+      {profile?.subscription_tier === 'free' && (
         <Card className="border-accent/30 bg-accent/5">
           <CardContent className="p-4 flex items-center justify-between">
             <div>

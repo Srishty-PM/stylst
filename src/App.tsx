@@ -26,22 +26,25 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user, profile, isLoading } = useAuth();
+  if (isLoading) return null;
   if (!user) return <Navigate to="/auth/login" replace />;
-  if (!user.onboarding_completed) return <Navigate to="/onboarding" replace />;
+  if (profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
   return <AppLayout>{children}</AppLayout>;
 };
 
 const OnboardingRoute = () => {
-  const { user } = useAuth();
+  const { user, profile, isLoading } = useAuth();
+  if (isLoading) return null;
   if (!user) return <Navigate to="/auth/login" replace />;
-  if (user.onboarding_completed) return <Navigate to="/dashboard" replace />;
+  if (profile?.onboarding_completed) return <Navigate to="/dashboard" replace />;
   return <Onboarding />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  if (user?.onboarding_completed) return <Navigate to="/dashboard" replace />;
+  const { user, profile, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (user && profile?.onboarding_completed) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 

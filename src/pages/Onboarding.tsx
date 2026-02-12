@@ -18,8 +18,8 @@ const Onboarding = () => {
   const toggleGoal = (g: string) =>
     setSelectedGoals(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
 
-  const finish = () => {
-    completeOnboarding();
+  const finish = async () => {
+    await completeOnboarding();
     navigate('/dashboard');
   };
 

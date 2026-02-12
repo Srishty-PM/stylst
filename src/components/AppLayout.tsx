@@ -19,7 +19,7 @@ const sidebarItems = [
 ];
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const location = useLocation();
 
   return (
@@ -48,7 +48,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
         <div className="border-t border-border pt-4 mt-4">
           <div className="px-3 mb-3">
-            <p className="text-sm font-medium text-foreground truncate">{user?.full_name}</p>
+            <p className="text-sm font-medium text-foreground truncate">{profile?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
           <button
@@ -64,7 +64,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile header */}
       <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
         <h1 className="font-display text-xl font-bold text-primary">Stylst</h1>
-        <div className="text-sm text-muted-foreground">{user?.full_name}</div>
+        <div className="text-sm text-muted-foreground">{profile?.full_name}</div>
       </header>
 
       {/* Main content */}
