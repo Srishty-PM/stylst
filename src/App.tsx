@@ -15,6 +15,7 @@ import AddClosetItem from "@/pages/closet/AddClosetItem";
 import ClosetItemDetail from "@/pages/closet/ClosetItemDetail";
 import Inspiration from "@/pages/Inspiration";
 import AddInspiration from "@/pages/inspiration/AddInspiration";
+import InspirationDetail from "@/pages/inspiration/InspirationDetail";
 import MatchBuilder from "@/pages/MatchBuilder";
 import Looks from "@/pages/Looks";
 import LookDetail from "@/pages/looks/LookDetail";
@@ -63,6 +64,7 @@ const AppRoutes = () => (
     <Route path="/closet/:itemId" element={<ProtectedRoute><ClosetItemDetail /></ProtectedRoute>} />
     <Route path="/inspiration" element={<ProtectedRoute><Inspiration /></ProtectedRoute>} />
     <Route path="/inspiration/add" element={<ProtectedRoute><AddInspiration /></ProtectedRoute>} />
+    <Route path="/inspiration/:inspirationId" element={<ProtectedRoute><InspirationDetail /></ProtectedRoute>} />
     <Route path="/match" element={<ProtectedRoute><MatchBuilder /></ProtectedRoute>} />
     <Route path="/match/:inspirationId" element={<ProtectedRoute><MatchBuilder /></ProtectedRoute>} />
     <Route path="/looks" element={<ProtectedRoute><Looks /></ProtectedRoute>} />

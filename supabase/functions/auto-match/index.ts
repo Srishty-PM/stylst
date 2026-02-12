@@ -25,7 +25,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { inspiration_id, scheduled_date } = await req.json();
+    const { inspiration_id, scheduled_date, save_look } = await req.json();
     if (!inspiration_id) throw new Error("Missing inspiration_id");
 
     // Fetch inspiration
@@ -43,8 +43,8 @@ serve(async (req) => {
       .eq("status", "ready");
     if (itemsError) throw new Error("Failed to fetch closet items");
 
-    if (!items || items.length < 2) {
-      return new Response(JSON.stringify({ error: "You need at least 2 items in your closet to auto-match." }), {
+    if (!items || items.length < 1) {
+      return new Response(JSON.stringify({ error: "You need at least 1 item in your closet to auto-match." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -56,12 +56,17 @@ serve(async (req) => {
     ).join("\n");
 
     const systemPrompt = `You are a fashion stylist AI. You will be shown an inspiration image and a list of clothing items from the user's closet. 
-Your job is to select the best matching items from the closet to recreate or approximate the look in the inspiration image.
+Your job is to:
+1. Identify ALL clothing/accessory items visible in the inspiration image
+2. For each item in the inspiration, find the BEST match from the user's closet (if one exists)
+3. For items in the inspiration that have NO good match in the closet, list them as "missing items" the user would need to buy
 
 User's closet items:
 ${closetList}
 
-Analyze the inspiration image and pick 2-6 items from the closet above that best match the style, colors, and vibe of the inspiration. Give the look a creative name and explain your choices.`;
+Analyze the inspiration image carefully. For each visible garment/accessory:
+- If a good match exists in the closet, include its ID in matched_item_ids
+- If no match exists, add it to missing_items with a descriptive name and category`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
@@ -69,7 +74,7 @@ Analyze the inspiration image and pick 2-6 items from the closet above that best
         role: "user",
         content: [
           { type: "image_url", image_url: { url: inspiration.image_url } },
-          { type: "text", text: "Match my closet items to recreate this look. Pick the best items and create an outfit." },
+          { type: "text", text: "Analyze this inspiration look. Match items from my closet and identify any missing pieces I'd need to buy to complete the look." },
         ],
       },
     ];
@@ -88,21 +93,34 @@ Analyze the inspiration image and pick 2-6 items from the closet above that best
             type: "function",
             function: {
               name: "create_matched_look",
-              description: "Create a matched look from closet items based on the inspiration image",
+              description: "Create a matched look identifying both matched closet items and missing items needed to complete the look",
               parameters: {
                 type: "object",
                 properties: {
                   name: { type: "string", description: "Creative outfit name" },
-                  item_ids: {
+                  matched_item_ids: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Array of closet item IDs to include in the look",
+                    description: "Array of closet item IDs that match items in the inspiration",
+                  },
+                  missing_items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string", description: "Descriptive name of the missing item (e.g. 'Black Leather Ankle Boots')" },
+                        category: { type: "string", description: "Category: tops, bottoms, dresses, outerwear, shoes, accessories, bags" },
+                        description: { type: "string", description: "Brief description of the ideal item to buy" },
+                      },
+                      required: ["name", "category"],
+                    },
+                    description: "Items visible in the inspiration but missing from the user's closet",
                   },
                   occasion: { type: "string", description: "Best occasion for this outfit (casual, work, date night, formal, weekend, party)" },
                   season: { type: "string", description: "Best season (spring, summer, fall, winter, all-season)" },
-                  reasoning: { type: "string", description: "Brief explanation of why these items match the inspiration" },
+                  reasoning: { type: "string", description: "Brief explanation of the look and how the pieces work together" },
                 },
-                required: ["name", "item_ids", "occasion", "reasoning"],
+                required: ["name", "matched_item_ids", "missing_items", "occasion", "reasoning"],
                 additionalProperties: false,
               },
             },
@@ -140,54 +158,59 @@ Analyze the inspiration image and pick 2-6 items from the closet above that best
 
     // Validate item IDs exist in closet
     const validIds = items.map((i: any) => i.id);
-    const matchedIds = match.item_ids.filter((id: string) => validIds.includes(id));
-    if (matchedIds.length < 2) {
-      return new Response(JSON.stringify({ error: "Could not find enough matching items in your closet for this inspiration." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Create the matched look
-    const { data: look, error: lookError } = await supabase
-      .from("matched_looks")
-      .insert({
-        user_id: user.id,
-        name: match.name,
-        closet_item_ids: matchedIds,
-        inspiration_id: inspiration_id,
-        occasion: match.occasion || null,
-        season: match.season || null,
-        notes: match.reasoning || null,
-        created_by_ai: true,
-      })
-      .select()
-      .single();
-
-    if (lookError) throw new Error("Failed to save matched look: " + lookError.message);
-
-    // Schedule on calendar if date provided
-    let scheduledOutfit = null;
-    if (scheduled_date) {
-      const { data: outfit, error: schedError } = await supabase
-        .from("scheduled_outfits")
-        .insert({
-          user_id: user.id,
-          matched_look_id: look.id,
-          scheduled_date,
-          event_name: match.name,
-        })
-        .select()
-        .single();
-      if (schedError) console.error("Failed to schedule outfit:", schedError.message);
-      else scheduledOutfit = outfit;
-    }
+    const matchedIds = (match.matched_item_ids || match.item_ids || []).filter((id: string) => validIds.includes(id));
+    const missingItems = match.missing_items || [];
 
     // Get matched items details for response
     const matchedItems = items.filter((i: any) => matchedIds.includes(i.id));
 
+    // If save_look is true, persist the look to the database
+    let look = null;
+    let scheduledOutfit = null;
+
+    if (save_look && matchedIds.length >= 1) {
+      const { data: savedLook, error: lookError } = await supabase
+        .from("matched_looks")
+        .insert({
+          user_id: user.id,
+          name: match.name,
+          closet_item_ids: matchedIds,
+          inspiration_id: inspiration_id,
+          occasion: match.occasion || null,
+          season: match.season || null,
+          notes: match.reasoning || null,
+          created_by_ai: true,
+        })
+        .select()
+        .single();
+
+      if (lookError) throw new Error("Failed to save matched look: " + lookError.message);
+      look = savedLook;
+
+      // Schedule on calendar if date provided
+      if (scheduled_date && look) {
+        const { data: outfit, error: schedError } = await supabase
+          .from("scheduled_outfits")
+          .insert({
+            user_id: user.id,
+            matched_look_id: look.id,
+            scheduled_date,
+            event_name: match.name,
+          })
+          .select()
+          .single();
+        if (schedError) console.error("Failed to schedule outfit:", schedError.message);
+        else scheduledOutfit = outfit;
+      }
+    }
+
     return new Response(JSON.stringify({
       look,
       matched_items: matchedItems,
+      missing_items: missingItems,
+      match_name: match.name,
+      occasion: match.occasion,
+      season: match.season,
       reasoning: match.reasoning,
       scheduled_outfit: scheduledOutfit,
     }), {
