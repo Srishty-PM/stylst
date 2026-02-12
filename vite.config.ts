@@ -24,9 +24,9 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
       manifest: {
-        name: "Your Daily Stylist",
-        short_name: "Daily Stylist",
-        description: "AI-powered wardrobe manager and outfit planner",
+        name: "Stylst",
+        short_name: "Stylst",
+        description: "From saved to Styled. Sync your boards, digitize your wardrobe, and let Stylst create outfits you can wear today.",
         theme_color: "#F5F0EC",
         background_color: "#F5F0EC",
         display: "standalone",
