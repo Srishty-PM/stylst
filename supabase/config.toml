@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.auto-match]
 verify_jwt = false
+
+[functions.analyze-clothing]
+verify_jwt = false
+
+[functions.remove-background]
+verify_jwt = false
