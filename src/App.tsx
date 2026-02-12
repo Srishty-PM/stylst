@@ -22,6 +22,7 @@ import AIStylist from "@/pages/AIStylist";
 import Calendar from "@/pages/Calendar";
 import Settings from "@/pages/Settings";
 import NotFound from "./pages/NotFound";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const AppRoutes = () => (
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+    <Route path="/install" element={<Install />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
