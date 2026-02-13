@@ -262,11 +262,27 @@ const InspirationDetail = () => {
                       className="w-full text-left"
                       onClick={() => setShoppingItem(item)}
                     >
-                      <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative group hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
-                        <HelpCircle className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
-                        <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight group-hover:text-foreground transition-colors">
-                          {item.name}
-                        </p>
+                      <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative group hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer overflow-hidden">
+                        {item.thumbnail_url ? (
+                          <>
+                            <img
+                              src={item.thumbnail_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
+                              <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <HelpCircle className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
+                            <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight group-hover:text-foreground transition-colors">
+                              {item.name}
+                            </p>
+                          </>
+                        )}
                         <div className="absolute bottom-2 inset-x-0 flex justify-center">
                           <Badge variant="outline" className="text-[9px] gap-1 bg-background/80">
                             <ShoppingBag className="w-2.5 h-2.5" />

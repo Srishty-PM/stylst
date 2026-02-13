@@ -5,6 +5,7 @@ export interface MissingItem {
   name: string;
   category: string;
   description?: string;
+  thumbnail_url?: string;
 }
 
 export interface AutoMatchResult {
