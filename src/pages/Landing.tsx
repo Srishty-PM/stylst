@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, ShirtIcon, Camera, CalendarDays, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/landing-hero.jpg';
+import stylstLogo from '@/assets/stylst-logo.png';
 
 const features = [
   { icon: Camera, title: 'Digitize Your Closet', desc: 'Photograph every piece. AI catalogs color, style, and season instantly.' },
@@ -28,9 +29,12 @@ const Landing = () => {
 
         {/* Nav overlay */}
         <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
-          <h1 className="text-2xl md:text-3xl font-display font-semibold tracking-[0.15em] text-primary-foreground uppercase">
-            Stylst
-          </h1>
+          <div className="flex items-center gap-3">
+            <img src={stylstLogo} alt="Stylst" className="w-9 h-9 rounded" />
+            <h1 className="text-2xl md:text-3xl font-display font-semibold tracking-[0.15em] text-primary-foreground uppercase">
+              Stylst
+            </h1>
+          </div>
           <div className="flex items-center gap-4">
             <Link to="/auth/login">
               <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 uppercase text-[10px] tracking-[0.25em] font-semibold">
