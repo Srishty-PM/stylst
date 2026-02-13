@@ -27,6 +27,7 @@ import AddInfluencerStyle from "@/pages/influencer-styles/AddInfluencerStyle";
 import InfluencerStyleDetail from "@/pages/influencer-styles/InfluencerStyleDetail";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const AppRoutes = () => (
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
+    <Route path="/privacy" element={<Privacy />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

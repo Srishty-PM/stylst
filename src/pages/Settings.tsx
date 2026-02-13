@@ -142,7 +142,9 @@ const Settings = () => {
         </CardContent>
       </Card>
 
-      <p className="text-xs text-center text-muted-foreground">Stylst v1.0.0 · Terms · Privacy</p>
+      <p className="text-xs text-center text-muted-foreground">
+        Stylst v1.0.0 · Terms · <a href="/privacy" className="underline hover:text-foreground">Privacy</a>
+      </p>
     </div>
   );
 };
