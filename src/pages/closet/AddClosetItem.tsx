@@ -166,7 +166,7 @@ const AddClosetItem = () => {
       // Step 3: Background removal
       try {
         const { data: cleanData, error: cleanError } = await supabase.functions.invoke('remove-background', {
-          body: { image_url: finalUrl, user_id: user.id },
+          body: { image_url: finalUrl },
         });
         if (!cleanError && cleanData?.cleaned_url) {
           finalUrl = cleanData.cleaned_url;
