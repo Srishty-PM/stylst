@@ -279,7 +279,7 @@ const Onboarding = () => {
       let finalUrl = item.imageUrl!;
       try {
         const { data } = await supabase.functions.invoke('remove-background', {
-          body: { image_url: finalUrl, user_id: user.id },
+          body: { image_url: finalUrl },
         });
         if (data?.cleaned_url) finalUrl = data.cleaned_url;
       } catch {}
