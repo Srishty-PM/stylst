@@ -95,6 +95,14 @@ const Settings = () => {
             </div>
             <Badge variant="secondary">Coming Soon</Badge>
           </div>
+          <Separator />
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => navigate('/settings/influencer-styles')}>
+            <div>
+              <p className="text-sm font-medium text-foreground">Influencer Styles</p>
+              <p className="text-xs text-muted-foreground">AI learns your favorite influencers' aesthetics</p>
+            </div>
+            <Badge variant="secondary">New</Badge>
+          </div>
         </CardContent>
       </Card>
 

@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Send } from 'lucide-react';
+import { Sparkles, Loader2, Send, UserCircle, ArrowRight } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
 
 const SUGGESTIONS = [
   "Create a casual weekend outfit",
@@ -16,6 +18,8 @@ const SUGGESTIONS = [
 
 const AIStylist = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { data: activeInfluencers } = useActiveInfluencerStyles();
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -99,6 +103,31 @@ const AIStylist = () => {
         </Badge>
       </div>
 
+      {/* Active influencer styles */}
+      {activeInfluencers && activeInfluencers.length > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-sm font-medium text-foreground">Your Style Influences:</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {activeInfluencers.map(inf => (
+                <Badge key={inf.id} variant="outline" className="gap-1">
+                  <UserCircle className="w-3 h-3" /> {inf.influencer_name}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">AI will create outfits inspired by their aesthetic using your closet.</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 px-2"
+              onClick={() => navigate('/settings/influencer-styles')}
+            >
+              Manage Influencers <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick suggestions */}
       {!response && !isLoading && (
         <div className="grid grid-cols-2 gap-2">
@@ -142,7 +171,7 @@ const AIStylist = () => {
           <Textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            placeholder="Tell me what you need... e.g. 'Create a winter office outfit with my black coat'"
+            placeholder={activeInfluencers?.length ? `e.g., "Winter office outfit in ${activeInfluencers[0].influencer_name} style"` : "Tell me what you need... e.g. 'Create a winter office outfit with my black coat'"}
             className="min-h-[80px]"
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {

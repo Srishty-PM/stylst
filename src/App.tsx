@@ -22,6 +22,9 @@ import LookDetail from "@/pages/looks/LookDetail";
 import AIStylist from "@/pages/AIStylist";
 import Calendar from "@/pages/Calendar";
 import Settings from "@/pages/Settings";
+import InfluencerStyles from "@/pages/influencer-styles/InfluencerStyles";
+import AddInfluencerStyle from "@/pages/influencer-styles/AddInfluencerStyle";
+import InfluencerStyleDetail from "@/pages/influencer-styles/InfluencerStyleDetail";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 
@@ -72,6 +75,9 @@ const AppRoutes = () => (
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+    <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />
+    <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
+    <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
     <Route path="*" element={<NotFound />} />
   </Routes>

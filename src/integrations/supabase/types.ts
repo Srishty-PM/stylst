@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      influencer_styles: {
+        Row: {
+          created_at: string | null
+          id: string
+          influencer_name: string
+          instagram_handle: string | null
+          style_profile: Json
+          times_used: number | null
+          updated_at: string | null
+          user_uploaded_photos: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          influencer_name: string
+          instagram_handle?: string | null
+          style_profile: Json
+          times_used?: number | null
+          updated_at?: string | null
+          user_uploaded_photos?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          influencer_name?: string
+          instagram_handle?: string | null
+          style_profile?: Json
+          times_used?: number | null
+          updated_at?: string | null
+          user_uploaded_photos?: string[] | null
+        }
+        Relationships: []
+      }
       inspiration: {
         Row: {
           created_at: string
@@ -313,6 +346,38 @@ export type Database = {
             columns: ["matched_look_id"]
             isOneToOne: false
             referencedRelation: "matched_looks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_influencer_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          influencer_style_id: string
+          is_active: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          influencer_style_id: string
+          is_active?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          influencer_style_id?: string
+          is_active?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_influencer_preferences_influencer_style_id_fkey"
+            columns: ["influencer_style_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_styles"
             referencedColumns: ["id"]
           },
         ]
