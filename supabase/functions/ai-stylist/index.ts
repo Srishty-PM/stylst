@@ -33,6 +33,13 @@ serve(async (req) => {
 
     if (itemsError) throw new Error("Failed to fetch closet items");
 
+    // Fetch active influencer styles
+    const { data: influencerPrefs } = await supabase
+      .from("user_influencer_preferences")
+      .select("influencer_styles(influencer_name, style_profile)")
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+
     const { prompt } = await req.json();
     if (!prompt) throw new Error("Missing prompt");
 
@@ -40,14 +47,29 @@ serve(async (req) => {
       (i: any) => `- ${i.name} (${i.category}${i.brand ? `, ${i.brand}` : ""}${i.colors?.length ? `, colors: ${i.colors.join("/")}` : ""}${i.tags?.length ? `, tags: ${i.tags.join(", ")}` : ""})`
     ).join("\n");
 
+    // Build influencer context
+    let influencerContext = "";
+    if (influencerPrefs?.length) {
+      const influencerDetails = influencerPrefs
+        .map((p: any) => p.influencer_styles)
+        .filter(Boolean)
+        .map((s: any) => {
+          const sp = s.style_profile;
+          return `- ${s.influencer_name}: ${sp.aesthetic || ""}. Colors: ${(sp.colors || []).join(", ")}. Key pieces: ${(sp.keyPieces || []).join(", ")}. Style: ${(sp.keywords || []).join(", ")}`;
+        })
+        .join("\n");
+
+      influencerContext = `\n\nUser's Style Influences (fashion influencers they admire):\n${influencerDetails}\n\nWhen generating outfits, incorporate the aesthetic of these influencers. Match their color palettes, silhouettes, and overall vibe where possible.`;
+    }
+
     const systemPrompt = `You are an expert fashion stylist AI. The user has these items in their closet (only "ready" items shown):
 
-${closetSummary || "The user's closet is empty."}
+${closetSummary || "The user's closet is empty."}${influencerContext}
 
 Based on the user's request, suggest 1-3 outfit combinations using ONLY items from their closet above. For each outfit:
 1. Give it a creative name
 2. List the exact item names to combine
-3. Explain why they work together (style, color harmony, occasion fit)
+3. Explain why they work together (style, color harmony, occasion fit)${influencerPrefs?.length ? "\n4. Mention which influencer's aesthetic inspired this outfit and why" : ""}
 4. Rate the outfit match (1-5 stars)
 
 If the closet doesn't have enough items for the request, say so honestly and suggest what items they could add. Be enthusiastic but genuine.`;

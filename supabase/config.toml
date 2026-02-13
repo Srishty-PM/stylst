@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.remove-background]
 verify_jwt = false
+
+[functions.generate-influencer-style]
+verify_jwt = false
