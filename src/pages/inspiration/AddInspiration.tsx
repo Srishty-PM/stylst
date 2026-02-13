@@ -1,4 +1,4 @@
-import { Upload, Link2, Loader2 } from 'lucide-react';
+import { Upload, Link2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
+import { usePinterestConnect, usePinterestBoards, useSyncPinterestBoard } from '@/hooks/usePinterest';
 import { toast } from '@/hooks/use-toast';
 
 const AddInspiration = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const addInspo = useAddInspiration();
 
@@ -20,6 +21,11 @@ const AddInspiration = () => {
   const [description, setDescription] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const { connect, loading: connectLoading } = usePinterestConnect();
+  const pinterestConnected = profile?.pinterest_connected ?? false;
+  const { data: boards, isLoading: boardsLoading } = usePinterestBoards(pinterestConnected);
+  const { sync, syncing } = useSyncPinterestBoard();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -63,6 +69,26 @@ const AddInspiration = () => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConnectPinterest = async () => {
+    try {
+      await connect();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleSyncBoard = async (boardId: string, boardName: string) => {
+    try {
+      const result = await sync(boardId);
+      toast({
+        title: 'Board Synced!',
+        description: `Imported ${result.synced} new pins from "${boardName}".`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Sync Failed', description: err.message, variant: 'destructive' });
     }
   };
 
@@ -134,17 +160,72 @@ const AddInspiration = () => {
         </CardContent>
       </Card>
 
-      {/* Pinterest placeholder */}
+      {/* Pinterest */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">Connect Pinterest</CardTitle>
-            <Badge variant="secondary">Coming Soon</Badge>
+            <CardTitle className="text-lg">Pinterest</CardTitle>
+            {pinterestConnected ? (
+              <Badge variant="default" className="gap-1"><CheckCircle2 className="w-3 h-3" /> Connected</Badge>
+            ) : (
+              <Badge variant="secondary">Not Connected</Badge>
+            )}
           </div>
-          <CardDescription>Sync your Pinterest boards automatically.</CardDescription>
+          <CardDescription>
+            {pinterestConnected
+              ? 'Select a board below to sync pins as inspiration.'
+              : 'Connect your Pinterest account to import fashion boards.'}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button variant="outline" className="w-full" disabled>Connect Pinterest</Button>
+        <CardContent className="space-y-3">
+          {!pinterestConnected ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={connectLoading}
+              onClick={handleConnectPinterest}
+            >
+              {connectLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Connect Pinterest
+            </Button>
+          ) : boardsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : boards && boards.length > 0 ? (
+            <div className="space-y-2">
+              {boards.map((board) => (
+                <div
+                  key={board.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {board.image_url && (
+                      <img
+                        src={board.image_url}
+                        alt={board.name}
+                        className="w-10 h-10 rounded-md object-cover shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{board.name}</p>
+                      <p className="text-xs text-muted-foreground">{board.pin_count} pins</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={syncing}
+                    onClick={() => handleSyncBoard(board.id, board.name)}
+                  >
+                    {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sync'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-2">No boards found.</p>
+          )}
         </CardContent>
       </Card>
     </div>

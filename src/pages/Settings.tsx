@@ -7,16 +7,27 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut } from 'lucide-react';
+import { LogOut, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePinterestConnect } from '@/hooks/usePinterest';
+import { toast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
+  const { connect, loading: pinterestLoading } = usePinterestConnect();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleConnectPinterest = async () => {
+    try {
+      await connect();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -83,9 +94,14 @@ const Settings = () => {
               <p className="text-sm font-medium text-foreground">Pinterest</p>
               <p className="text-xs text-muted-foreground">Sync your fashion boards</p>
             </div>
-            <Badge variant={profile?.pinterest_connected ? 'default' : 'secondary'}>
-              {profile?.pinterest_connected ? 'Connected' : 'Not Connected'}
-            </Badge>
+            {profile?.pinterest_connected ? (
+              <Badge variant="default">Connected</Badge>
+            ) : (
+              <Button size="sm" variant="outline" disabled={pinterestLoading} onClick={handleConnectPinterest}>
+                {pinterestLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
+                Connect
+              </Button>
+            )}
           </div>
           <Separator />
           <div className="flex items-center justify-between">
