@@ -47,11 +47,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    // If the session was ephemeral (user didn't check "keep me logged in"),
+    // sign out when the browser is reopened (sessionStorage is cleared on close)
+    const wasEphemeral = localStorage.getItem('stylst_ephemeral_session');
+    if (wasEphemeral && !sessionStorage.getItem('stylst_ephemeral_session')) {
+      localStorage.removeItem('stylst_ephemeral_session');
+      supabase.auth.signOut().then(() => setIsLoading(false));
+      return;
+    }
+
     // Set up auth listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        // Use setTimeout to avoid Supabase client deadlock
         setTimeout(() => fetchProfile(session.user.id), 0);
       } else {
         setUser(null);
