@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, ShirtIcon, Layers, Heart, CalendarDays, Sparkles, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import stylstLogo from '@/assets/stylst-logo.png';
 
 const bottomNavItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
@@ -26,7 +27,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-60 border-r border-border bg-card px-4 py-6">
-        <h1 className="font-display text-2xl font-bold text-primary mb-8 px-3">Stylst</h1>
+        <div className="flex items-center gap-2 mb-8 px-3">
+          <img src={stylstLogo} alt="Stylst" className="w-8 h-8 rounded" />
+          <h1 className="font-display text-2xl font-bold text-primary">Stylst</h1>
+        </div>
         <nav className="flex-1 space-y-1">
           {sidebarItems.map(item => (
             <NavLink
@@ -63,7 +67,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Mobile header */}
       <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
-        <h1 className="font-display text-xl font-bold text-primary">Stylst</h1>
+        <div className="flex items-center gap-2">
+          <img src={stylstLogo} alt="Stylst" className="w-7 h-7 rounded" />
+          <h1 className="font-display text-xl font-bold text-primary">Stylst</h1>
+        </div>
         <div className="text-sm text-muted-foreground">{profile?.full_name}</div>
       </header>
 
