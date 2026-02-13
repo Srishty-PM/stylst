@@ -28,6 +28,7 @@ import InfluencerStyleDetail from "@/pages/influencer-styles/InfluencerStyleDeta
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 import Privacy from "./pages/Privacy";
+import PinterestCallback from "./pages/PinterestCallback";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const AppRoutes = () => (
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
     <Route path="/privacy" element={<Privacy />} />
+    <Route path="/pinterest-callback" element={<ProtectedRoute><PinterestCallback /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

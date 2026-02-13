@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.generate-influencer-style]
 verify_jwt = false
+
+[functions.pinterest-auth]
+verify_jwt = false
+
+[functions.pinterest-callback]
+verify_jwt = false
+
+[functions.pinterest-sync]
+verify_jwt = false
