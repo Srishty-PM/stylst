@@ -75,6 +75,15 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
           </SheetDescription>
         </SheetHeader>
 
+        {/* Thumbnail preview */}
+        {item?.thumbnail_url && (
+          <div className="flex justify-center pb-3">
+            <div className="w-24 h-24 rounded-xl overflow-hidden border border-border shadow-sm">
+              <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
+            </div>
+          </div>
+        )}
+
         <ScrollArea className="h-full pr-1">
           {loading && (
             <div className="space-y-3 pb-8">

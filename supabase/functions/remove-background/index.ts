@@ -37,7 +37,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Remove the background from this clothing item image. Make the background pure white (#FFFFFF). Keep the clothing item crisp, clean, and high quality. Center the item in the frame. The result should look like a professional product photo on a white background.",
+                text: "Remove the background from this clothing item image. Make the background pure white (#FFFFFF). CRITICAL: Preserve the EXACT original orientation and aspect ratio of the image — if the original is portrait/vertical, the output MUST be portrait/vertical. Do NOT rotate, crop to square, or change the aspect ratio. Keep the clothing item crisp, clean, and high quality. Center the item in the frame. The result should look like a professional product photo on a white background.",
               },
               {
                 type: "image_url",
