@@ -110,8 +110,8 @@ Generate exactly 6 product recommendations that match this item. For each produc
       throw new Error("AI gateway error");
     }
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const aiResult = await response.json();
+    const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) throw new Error("No tool call in response");
 
     const recommendations = JSON.parse(toolCall.function.arguments);
