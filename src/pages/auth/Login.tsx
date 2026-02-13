@@ -4,12 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +25,13 @@ const Login = () => {
     if (error) {
       toast({ title: 'Login failed', description: error, variant: 'destructive' });
     } else {
+      if (!rememberMe) {
+        sessionStorage.setItem('stylst_ephemeral_session', 'true');
+        localStorage.setItem('stylst_ephemeral_session', 'true');
+      } else {
+        sessionStorage.removeItem('stylst_ephemeral_session');
+        localStorage.removeItem('stylst_ephemeral_session');
+      }
       navigate('/dashboard');
     }
   };
@@ -44,6 +53,10 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="remember" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked === true)} />
+              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">Keep me logged in</Label>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
