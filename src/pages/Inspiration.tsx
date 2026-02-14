@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Plus, ImageIcon, Loader2, Trash2, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -30,6 +29,12 @@ const Inspiration = () => {
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
+  };
+
+  const handleMatch = (e: React.MouseEvent, item: { id: string; image_url: string }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAutoMatchItem(item);
   };
 
   return (
@@ -64,30 +69,49 @@ const Inspiration = () => {
         <div className="columns-2 md:columns-3 gap-3 space-y-3">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
-              <div className="relative rounded-xl overflow-hidden group break-inside-avoid cursor-pointer" onClick={() => navigate(`/inspiration/${item.id}`)}>
+              <div
+                className="relative rounded-sm overflow-hidden group break-inside-avoid cursor-pointer"
+                onClick={() => navigate(`/inspiration/${item.id}`)}
+              >
                 <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100 pointer-events-none">
-                   <div className="flex gap-1 pointer-events-auto">
-                    {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
-                  </div>
-                  <div className="flex gap-1 pointer-events-auto">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={(e) => { e.stopPropagation(); setAutoMatchItem({ id: item.id, image_url: item.image_url }); }}
+
+                {/* Always-visible Match button - bottom overlay */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 pt-10">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-sm text-[12px] font-semibold uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+                      onClick={(e) => handleMatch(e, { id: item.id, image_url: item.image_url })}
                     >
-                      <Sparkles className="w-3 h-3 mr-1" /> Match This
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Match
+                    </button>
+                    <button
+                      className="w-7 h-7 flex items-center justify-center rounded-sm bg-white/10 hover:bg-destructive/80 text-white transition-colors"
                       onClick={(e) => handleDelete(e, item.id)}
                       disabled={deleteInspo.isPending}
                     >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
+
+                {/* Desktop hover overlay with large button */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                  <button
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-sm text-[14px] font-semibold uppercase tracking-wider flex items-center gap-2 transition-all transform scale-90 group-hover:scale-100 pointer-events-auto shadow-lg"
+                    onClick={(e) => handleMatch(e, { id: item.id, image_url: item.image_url })}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Match This Look
+                  </button>
+                </div>
+
+                {/* Source badge */}
+                {item.source_url && (
+                  <div className="absolute top-2 left-2">
+                    <span className="text-[9px] font-medium uppercase tracking-wider bg-white/80 text-foreground px-1.5 py-0.5 rounded-sm">Link</span>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
@@ -100,6 +124,7 @@ const Inspiration = () => {
           onOpenChange={(open) => !open && setAutoMatchItem(null)}
           inspirationId={autoMatchItem.id}
           inspirationImage={autoMatchItem.image_url}
+          autoStart
         />
       )}
     </div>
