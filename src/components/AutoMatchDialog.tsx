@@ -295,8 +295,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
               <div className="flex flex-col gap-2 pt-2">
                 <div className="flex gap-2">
                   {result.look && (
-                    <Button className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={() => navigate(`/looks/${result.look!.id}`)}>
-                      View Look <ArrowRight className="w-4 h-4 ml-1" />
+                    <Button className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={() => { handleClose(); navigate(`/looks/${result.look!.id}`); }}>
+                      Save to Looks <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
                   <Button
@@ -311,7 +311,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
                   className="text-[12px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
                   onClick={handleClose}
                 >
-                  Skip →
+                  Done
                 </button>
               </div>
             </div>
