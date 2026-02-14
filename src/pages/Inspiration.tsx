@@ -67,9 +67,8 @@ const Inspiration = () => {
               <div className="relative rounded-xl overflow-hidden group break-inside-avoid cursor-pointer" onClick={() => navigate(`/inspiration/${item.id}`)}>
                 <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-between p-3 opacity-0 group-hover:opacity-100 pointer-events-none">
-                  <div className="flex gap-1 pointer-events-auto">
+                   <div className="flex gap-1 pointer-events-auto">
                     {item.source_url && <Badge variant="secondary" className="text-[10px]">Link</Badge>}
-                    {item.description && <Badge variant="outline" className="text-[10px] max-w-[120px] truncate">{item.description}</Badge>}
                   </div>
                   <div className="flex gap-1 pointer-events-auto">
                     <Button
