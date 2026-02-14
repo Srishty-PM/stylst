@@ -90,7 +90,7 @@ Generate exactly 6 product recommendations that match this item. For each produc
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "return_recommendations" } },
+        tool_choice: "auto",
       }),
     });
 
@@ -111,10 +111,25 @@ Generate exactly 6 product recommendations that match this item. For each produc
     }
 
     const aiResult = await response.json();
-    const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
+    const msg = aiResult.choices?.[0]?.message;
+    const toolCall = msg?.tool_calls?.[0];
+    let recommendations: any;
 
-    const recommendations = JSON.parse(toolCall.function.arguments);
+    if (toolCall) {
+      recommendations = JSON.parse(toolCall.function.arguments);
+    } else if (msg?.content) {
+      // Fallback: parse from text content
+      const jsonMatch = msg.content.match(/\{[\s\S]*"recommendations"[\s\S]*\}/);
+      if (jsonMatch) {
+        recommendations = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Could not parse recommendations from response");
+      }
+    } else {
+      throw new Error("No tool call or content in response");
+    }
+
+    console.log("Returning recommendations:", JSON.stringify(recommendations).slice(0, 200));
     return new Response(JSON.stringify(recommendations), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

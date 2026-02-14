@@ -56,11 +56,14 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
       })
       .then(({ data, error: fnError }) => {
         if (fnError) {
+          console.error('Shop recommendations error:', fnError);
           setError(fnError.message || 'Failed to load recommendations');
         } else if (data?.error) {
+          console.error('Shop recommendations data error:', data.error);
           setError(data.error);
         } else {
           const recs = data?.recommendations || [];
+          console.log('Shop recommendations received:', recs.length, 'items');
           const mapped: ShoppingProduct[] = recs.map((r: any, i: number) => {
             const { price, originalPrice } = parsePrice(r.price_range);
             return {
@@ -77,9 +80,15 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
             };
           });
           setProducts(mapped);
+          if (mapped.length === 0) {
+            setError('No recommendations found. Try browsing Google Shopping instead.');
+          }
         }
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => {
+        console.error('Shop recommendations catch:', e);
+        setError(e.message);
+      })
       .finally(() => setLoading(false));
   }, [open, item]);
 
