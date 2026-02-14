@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -9,30 +9,34 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
+
+// Eagerly load landing & auth (critical path)
 import Landing from "@/pages/Landing";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/Signup";
-import Onboarding from "@/pages/Onboarding";
-import Dashboard from "@/pages/Dashboard";
-import Closet from "@/pages/Closet";
-import AddClosetItem from "@/pages/closet/AddClosetItem";
-import ClosetItemDetail from "@/pages/closet/ClosetItemDetail";
-import Inspiration from "@/pages/Inspiration";
-import AddInspiration from "@/pages/inspiration/AddInspiration";
-import InspirationDetail from "@/pages/inspiration/InspirationDetail";
-import MatchBuilder from "@/pages/MatchBuilder";
-import Looks from "@/pages/Looks";
-import LookDetail from "@/pages/looks/LookDetail";
-import AIStylist from "@/pages/AIStylist";
-import Calendar from "@/pages/Calendar";
-import Settings from "@/pages/Settings";
-import InfluencerStyles from "@/pages/influencer-styles/InfluencerStyles";
-import AddInfluencerStyle from "@/pages/influencer-styles/AddInfluencerStyle";
-import InfluencerStyleDetail from "@/pages/influencer-styles/InfluencerStyleDetail";
-import NotFound from "./pages/NotFound";
-import Install from "./pages/Install";
-import Privacy from "./pages/Privacy";
-import PinterestCallback from "./pages/PinterestCallback";
+
+// Lazy load everything else
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Closet = lazy(() => import("@/pages/Closet"));
+const AddClosetItem = lazy(() => import("@/pages/closet/AddClosetItem"));
+const ClosetItemDetail = lazy(() => import("@/pages/closet/ClosetItemDetail"));
+const Inspiration = lazy(() => import("@/pages/Inspiration"));
+const AddInspiration = lazy(() => import("@/pages/inspiration/AddInspiration"));
+const InspirationDetail = lazy(() => import("@/pages/inspiration/InspirationDetail"));
+const MatchBuilder = lazy(() => import("@/pages/MatchBuilder"));
+const Looks = lazy(() => import("@/pages/Looks"));
+const LookDetail = lazy(() => import("@/pages/looks/LookDetail"));
+const AIStylist = lazy(() => import("@/pages/AIStylist"));
+const Calendar = lazy(() => import("@/pages/Calendar"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const InfluencerStyles = lazy(() => import("@/pages/influencer-styles/InfluencerStyles"));
+const AddInfluencerStyle = lazy(() => import("@/pages/influencer-styles/AddInfluencerStyle"));
+const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/InfluencerStyleDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Install = lazy(() => import("./pages/Install"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
 
 const queryClient = new QueryClient();
 
@@ -112,7 +116,9 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+              <AppRoutes />
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
