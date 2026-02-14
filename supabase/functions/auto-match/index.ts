@@ -164,7 +164,60 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
     // Get matched items details for response
     const matchedItems = items.filter((i: any) => matchedIds.includes(i.id));
 
-    // Skip thumbnail generation for speed — placeholders used in UI
+    // Generate thumbnails in parallel using image generation model
+    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    await Promise.all(missingItems.map(async (mi: any) => {
+      try {
+        const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [{
+              role: "user",
+              content: `Generate a clean product photo of: ${mi.name}. Category: ${mi.category}. White background, professional e-commerce style, centered, no text or watermarks.`,
+            }],
+          }),
+        });
+        if (imgRes.ok) {
+          const imgData = await imgRes.json();
+          // Check for inline_data format
+          const parts = imgData.choices?.[0]?.message?.content;
+          let b64: string | undefined;
+          if (typeof parts === "string") {
+            // Try to extract base64 from markdown image
+            const match64 = parts.match(/data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/);
+            if (match64) b64 = match64[1];
+          } else if (Array.isArray(parts)) {
+            const imgPart = parts.find((p: any) => p.type === "image_url" || p.inline_data);
+            if (imgPart?.image_url?.url) {
+              b64 = imgPart.image_url.url.replace(/^data:image\/\w+;base64,/, "");
+            } else if (imgPart?.inline_data?.data) {
+              b64 = imgPart.inline_data.data;
+            }
+          }
+          // Also check images array format
+          if (!b64) {
+            const imgUrl = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            if (imgUrl) b64 = imgUrl.replace(/^data:image\/\w+;base64,/, "");
+          }
+          if (b64) {
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+            const thumbPath = `missing-thumbnails/${user.id}/${crypto.randomUUID()}.png`;
+            await supabaseAdmin.storage.from("closet-images").upload(thumbPath, bytes, { contentType: "image/png", upsert: true });
+            const { data: pubUrl } = supabaseAdmin.storage.from("closet-images").getPublicUrl(thumbPath);
+            mi.thumbnail_url = pubUrl.publicUrl;
+          }
+        }
+      } catch (thumbErr) {
+        console.error("Thumbnail gen failed for", mi.name, thumbErr);
+      }
+    }));
 
     // If save_look is true, persist the look to the database
     let look = null;
