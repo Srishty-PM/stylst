@@ -31,6 +31,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
       const res = await autoMatch.mutateAsync({
         inspiration_id: inspirationId,
         scheduled_date: addToCalendar ? scheduledDate : undefined,
+        save_look: true,
       });
       setResult(res);
       setStep('result');
@@ -119,7 +120,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
                 <Check className="w-5 h-5 text-accent" />
                 Look Created!
               </DialogTitle>
-              <DialogDescription>{result.look.name}</DialogDescription>
+              <DialogDescription>{result.look?.name || result.match_name}</DialogDescription>
             </DialogHeader>
 
             <div className="grid grid-cols-3 gap-2">
@@ -138,8 +139,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {result.look.occasion && <Badge variant="secondary">{result.look.occasion}</Badge>}
-              {result.look.season && <Badge variant="outline">{result.look.season}</Badge>}
+              {(result.look?.occasion || result.occasion) && <Badge variant="secondary">{result.look?.occasion || result.occasion}</Badge>}
+              {(result.look?.season || result.season) && <Badge variant="outline">{result.look?.season || result.season}</Badge>}
               {result.scheduled_outfit && (
                 <Badge variant="default">
                   <CalendarPlus className="w-3 h-3 mr-1" />
@@ -150,9 +151,15 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={handleClose}>Done</Button>
-              <Button className="flex-1" onClick={() => navigate(`/looks/${result.look.id}`)}>
-                View Look <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
+              {result.look ? (
+                <Button className="flex-1" onClick={() => navigate(`/looks/${result.look!.id}`)}>
+                  View Look <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <Button className="flex-1" onClick={handleClose}>
+                  Great! <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
             </div>
           </>
         )}
