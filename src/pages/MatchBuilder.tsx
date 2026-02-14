@@ -94,7 +94,7 @@ const MatchBuilder = () => {
                 return (
                   <button key={item.id} onClick={() => toggle(item.id)} className="relative text-left">
                     <div className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${isSelected ? 'border-accent' : 'border-transparent'}`}>
-                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={item.image_url_cleaned || item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" loading="lazy" style={{ imageOrientation: 'from-image' }} />
                     </div>
                     {isSelected && (
                       <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center">
@@ -128,7 +128,7 @@ const MatchBuilder = () => {
               const item = closetItems.find(i => i.id === id);
               return item ? (
                 <div key={id} className="aspect-square rounded-lg overflow-hidden">
-                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  <img src={item.image_url_cleaned || item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" style={{ imageOrientation: 'from-image' }} />
                 </div>
               ) : null;
             })}

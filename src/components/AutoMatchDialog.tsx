@@ -127,7 +127,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
               {result.matched_items.map(item => (
                 <div key={item.id} className="space-y-1">
                   <div className="aspect-square rounded-lg overflow-hidden">
-                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" style={{ imageOrientation: 'from-image' }} />
                   </div>
                   <p className="text-xs text-foreground truncate">{item.name}</p>
                 </div>

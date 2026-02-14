@@ -71,7 +71,7 @@ const ClosetItemDetail = () => {
       </Link>
 
       <div className="rounded-xl overflow-hidden aspect-square max-w-md mx-auto">
-        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+        <img src={item.image_url_cleaned || item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" style={{ imageOrientation: 'from-image' }} />
       </div>
 
       <Card>

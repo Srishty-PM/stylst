@@ -79,7 +79,8 @@ const ItemSwapSheet = ({
                     <img
                       src={item.image_url_cleaned || item.image_url}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain bg-muted"
+                      style={{ imageOrientation: 'from-image' }}
                       loading="lazy"
                     />
                   </div>
