@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, CalendarPlus, Check, ArrowRight } from 'lucide-react';
-import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
+import { Loader2, Sparkles, CalendarPlus, Check, ArrowRight, ShoppingBag } from 'lucide-react';
+import { useAutoMatch, AutoMatchResult, MissingItem } from '@/hooks/useAutoMatch';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import ShoppingSheet from '@/components/ShoppingSheet';
 
 interface AutoMatchDialogProps {
   open: boolean;
@@ -24,6 +25,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [addToCalendar, setAddToCalendar] = useState(true);
   const [result, setResult] = useState<AutoMatchResult | null>(null);
+  const [shoppingItem, setShoppingItem] = useState<MissingItem | null>(null);
+  const [shoppingOpen, setShoppingOpen] = useState(false);
 
   const handleMatch = async () => {
     setStep('processing');
@@ -134,6 +137,38 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
               ))}
             </div>
 
+            {/* Missing items */}
+            {result.missing_items && result.missing_items.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Missing from closet</p>
+                <div className="space-y-2">
+                  {result.missing_items.map((mi, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
+                      {mi.thumbnail_url ? (
+                        <img src={mi.thumbnail_url} alt={mi.name} className="w-10 h-10 rounded-md object-cover bg-muted" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                          <ShoppingBag className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{mi.name}</p>
+                        <p className="text-xs text-muted-foreground">{mi.category}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 gap-1.5 text-xs"
+                        onClick={() => { setShoppingItem(mi); setShoppingOpen(true); }}
+                      >
+                        <ShoppingBag className="w-3 h-3" /> Shop
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-sm text-foreground">{result.reasoning}</p>
             </div>
@@ -164,6 +199,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
           </>
         )}
       </DialogContent>
+      <ShoppingSheet open={shoppingOpen} onOpenChange={setShoppingOpen} item={shoppingItem} />
     </Dialog>
   );
 };
