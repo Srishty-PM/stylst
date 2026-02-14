@@ -151,9 +151,6 @@ const InspirationDetail = () => {
         />
       </div>
 
-      {inspiration.description && (
-        <p className="text-sm text-muted-foreground">{inspiration.description}</p>
-      )}
 
       {/* Analyze Button - shown when no results yet */}
       {pageState === 'idle' && (
