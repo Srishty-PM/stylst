@@ -36,10 +36,10 @@ serve(async (req) => {
       .single();
     if (inspoError || !inspiration) throw new Error("Inspiration not found");
 
-    // Fetch closet items
+    // Fetch closet items with images for visual matching
     const { data: items, error: itemsError } = await supabase
       .from("closet_items")
-      .select("id, name, category, subcategory, colors, brand, tags, image_url")
+      .select("id, name, category, subcategory, colors, brand, tags, image_url, image_url_cleaned")
       .eq("status", "ready");
     if (itemsError) throw new Error("Failed to fetch closet items");
 
@@ -50,42 +50,60 @@ serve(async (req) => {
       });
     }
 
+    // Build rich closet list with metadata
     const closetList = items.map(
       (i: any, idx: number) =>
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    const systemPrompt = `You are an expert fashion stylist AI with excellent visual perception. You will analyze an inspiration outfit image and match items from the user's closet.
+    // Build multimodal content: inspiration image + closet item images for visual comparison
+    const userContent: any[] = [
+      { type: "image_url", image_url: { url: inspiration.image_url } },
+      { type: "text", text: "⬆️ INSPIRATION IMAGE — analyze this outfit.\n\n⬇️ Below are photos of EVERY item in the user's closet. Use BOTH the images AND the text list to match." },
+    ];
 
-STEP 1 — IDENTIFY every visible clothing item and accessory in the image (head to toe: hat, top, jacket/blazer, bottom/skirt, belt, bag, shoes, jewelry, etc.)
+    // Include closet item images (up to 30 to stay within context limits)
+    const itemsToShow = items.slice(0, 30);
+    for (const item of itemsToShow) {
+      const imgUrl = item.image_url_cleaned || item.image_url;
+      if (imgUrl) {
+        userContent.push({ type: "image_url", image_url: { url: imgUrl } });
+        userContent.push({ type: "text", text: `↑ Closet item id:"${item.id}" — ${item.name} (${item.category})` });
+      }
+    }
 
-STEP 2 — For EACH identified item, search the user's closet list below for the closest match.
+    userContent.push({
+      type: "text",
+      text: `\n\nFull closet text list (use this for IDs):\n${closetList}\n\nNow match: for each garment/accessory visible in the INSPIRATION image, find the best match from the closet items above. Be generous — similar style in the same category counts as a match. Only mark missing if truly no similar item exists.`,
+    });
 
-MATCHING RULES (be GENEROUS — prefer matching over missing):
-- "Houndstooth Blazer" matches a plaid/check blazer in the inspiration
-- "White Button-Down Shirt" matches a white button-up or white blouse
-- "Black Wide-Leg Trousers" matches black pants/trousers
-- "Blue Denim Jeans" matches jeans/denim pants
-- "Black Mary Jane Flats" matches black flats or similar black shoes
-- Same category + similar style/color = MATCH even if not identical
-- Only mark as MISSING if NO item in the same category with a remotely similar style exists
+    const systemPrompt = `You are a world-class fashion AI with 99%+ accuracy at outfit matching. You compare an INSPIRATION outfit photo against a user's ACTUAL closet item photos.
 
-STEP 3 — Verify: count items in image vs (matched + missing). They MUST equal.
+YOUR TASK:
+1. SCAN the inspiration image head-to-toe. List every visible garment and accessory (e.g., blazer, shirt, trousers, shoes, bag, belt, sunglasses, hat, jewelry).
+2. For EACH item, visually compare it against the closet item photos provided. Find the closest match.
+3. Return matched IDs and any truly missing items.
 
-User's closet (${items.length} items):
-${closetList}
+MATCHING PHILOSOPHY — MAXIMIZE MATCHES:
+- A match means the closet item could PLAUSIBLY substitute for the inspiration item
+- Same garment type + similar color/tone = MATCH (e.g., houndstooth blazer ↔ check/plaid blazer)
+- Same garment type + different shade but same family = MATCH (navy ↔ dark blue, cream ↔ white, grey ↔ charcoal)
+- Same garment type + similar silhouette = MATCH even if pattern differs (solid black blazer ↔ dark textured blazer)
+- Shoes: match by type first (boots↔boots, flats↔flats, heels↔heels), then color
+- Accessories: be generous — any similar accessory counts
+- ONLY mark MISSING if the closet has ZERO items in that garment category with even a remotely similar look
 
-Return matched_item_ids (closet IDs) and missing_items (items to buy).`;
+ACCURACY CHECKLIST (run before responding):
+□ Did I identify ALL visible items in the inspiration? (typically 4-8 items)
+□ For each "missing" item — did I REALLY check every closet item? Could any work as a substitute?
+□ Does matched_count + missing_count = total_identified_items?
+□ Am I being too strict? Loosen criteria and re-check.
+
+CRITICAL: It's better to over-match (use a similar item) than to mark something as missing when a reasonable substitute exists.`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: [
-          { type: "image_url", image_url: { url: inspiration.image_url } },
-          { type: "text", text: "Analyze this inspiration look. Match items from my closet and identify any missing pieces I'd need to buy to complete the look. Remember: be generous with matching — if I have a similar item, use it." },
-        ],
-      },
+      { role: "user", content: userContent },
     ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -95,7 +113,7 @@ Return matched_item_ids (closet IDs) and missing_items (items to buy).`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-2.5-flash",
         messages,
         tools: [
           {
