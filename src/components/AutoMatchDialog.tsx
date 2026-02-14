@@ -64,8 +64,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
               </DialogDescription>
             </DialogHeader>
 
-            <div className="rounded-xl overflow-hidden max-h-48">
-              <img src={inspirationImage} alt="Inspiration" className="w-full object-cover" />
+            <div className="rounded-md overflow-hidden bg-muted">
+              <img src={inspirationImage} alt="Inspiration" className="w-full max-h-64 object-contain" style={{ imageOrientation: 'from-image' }} />
             </div>
 
             <div className="space-y-3">
