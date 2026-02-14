@@ -143,11 +143,11 @@ const InspirationDetail = () => {
       </div>
 
       {/* Inspiration Image */}
-      <div className="rounded-2xl overflow-hidden shadow-lg">
+      <div className="rounded-2xl overflow-hidden shadow-lg bg-muted/30">
         <img
           src={inspiration.image_url}
           alt={inspiration.description || 'Fashion inspiration'}
-          className="w-full max-h-[400px] object-cover"
+          className="w-full max-h-[300px] object-contain"
         />
       </div>
 
