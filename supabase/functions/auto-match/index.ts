@@ -95,7 +95,7 @@ Return matched_item_ids (closet IDs) and missing_items (items to buy).`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages,
         tools: [
           {

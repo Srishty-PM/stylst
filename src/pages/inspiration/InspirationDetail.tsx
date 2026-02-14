@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInspirations } from '@/hooks/useInspirations';
-import { useAutoMatch, AutoMatchResult, MissingItem } from '@/hooks/useAutoMatch';
+import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useClosetItems } from '@/hooks/useClosetItems';
 import { Button } from '@/components/ui/button';
@@ -14,14 +14,21 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Sparkles, Loader2, ArrowLeft, Check, CalendarPlus, ShoppingBag,
-  HelpCircle, ChevronRight, Save, ArrowLeftRight,
+  Sparkles, Loader2, ArrowLeft, Check, CalendarPlus, Shirt,
+  Footprints, Watch, ShoppingBag as BagIcon, HelpCircle, ChevronRight, Save, ArrowLeftRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import ItemSwapSheet from '@/components/ItemSwapSheet';
-import ShoppingSheet from '@/components/ShoppingSheet';
+
+const categoryIcon = (category: string) => {
+  const c = category?.toLowerCase() || '';
+  if (c.includes('shoe') || c.includes('boot') || c.includes('sneaker') || c.includes('flat')) return Footprints;
+  if (c.includes('bag') || c.includes('purse') || c.includes('clutch')) return BagIcon;
+  if (c.includes('accessor') || c.includes('jewel') || c.includes('watch') || c.includes('belt')) return Watch;
+  return Shirt;
+};
 
 type PageState = 'idle' | 'analyzing' | 'results' | 'saving' | 'saved';
 
@@ -43,8 +50,7 @@ const InspirationDetail = () => {
   const [swappedItems, setSwappedItems] = useState<Record<number, string>>({});
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
 
-  // Shopping state
-  const [shoppingItem, setShoppingItem] = useState<MissingItem | null>(null);
+  // Shopping state removed — missing items are display-only now
 
   // Schedule dialog state
   const [showSchedule, setShowSchedule] = useState(false);
@@ -248,49 +254,30 @@ const InspirationDetail = () => {
                 ))}
 
                 {/* Missing Items */}
-                {missingItems.map((item, i) => (
-                  <motion.div
-                    key={`missing-${i}`}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: (matchedItems.length + i) * 0.08 }}
-                  >
-                    <button
-                      className="w-full text-left"
-                      onClick={() => setShoppingItem(item)}
+                {missingItems.map((item, i) => {
+                  const Icon = categoryIcon(item.category);
+                  return (
+                    <motion.div
+                      key={`missing-${i}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: (matchedItems.length + i) * 0.08 }}
                     >
-                      <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative group hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer overflow-hidden">
-                        {item.thumbnail_url ? (
-                          <>
-                            <img
-                              src={item.thumbnail_url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
-                              <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <HelpCircle className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
-                            <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight group-hover:text-foreground transition-colors">
-                              {item.name}
-                            </p>
-                          </>
-                        )}
+                      <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden">
+                        <Icon className="w-8 h-8 text-muted-foreground/50" />
+                        <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight">
+                          {item.name}
+                        </p>
                         <div className="absolute bottom-2 inset-x-0 flex justify-center">
                           <Badge variant="outline" className="text-[9px] gap-1 bg-background/80">
-                            <ShoppingBag className="w-2.5 h-2.5" />
-                            Buy
+                            Missing
                           </Badge>
                         </div>
                       </div>
-                    </button>
-                    <p className="text-[10px] text-muted-foreground mt-1 capitalize truncate">{item.category}</p>
-                  </motion.div>
-                ))}
+                      <p className="text-[10px] text-muted-foreground mt-1 capitalize truncate">{item.category}</p>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
@@ -397,12 +384,7 @@ const InspirationDetail = () => {
         }}
       />
 
-      {/* Shopping Sheet */}
-      <ShoppingSheet
-        open={shoppingItem !== null}
-        onOpenChange={(open) => { if (!open) setShoppingItem(null); }}
-        item={shoppingItem}
-      />
+      {/* Shopping removed — missing items are display-only */}
     </div>
   );
 };
