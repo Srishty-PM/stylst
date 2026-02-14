@@ -5,6 +5,7 @@ import { useInspirations } from '@/hooks/useInspirations';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useClosetItems } from '@/hooks/useClosetItems';
+import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -134,6 +135,7 @@ const InspirationDetail = () => {
     };
   });
   const missingItems = matchResult?.missing_items || [];
+  const thumbnails = useMissingThumbnails(missingItems);
   const totalItems = matchedItems.length + missingItems.length;
   const usedItemIds = matchedItems.map(m => m.id);
   const swapTarget = swapIndex !== null ? matchedItems[swapIndex] : null;
@@ -256,6 +258,7 @@ const InspirationDetail = () => {
                 {/* Missing Items */}
                 {missingItems.map((item, i) => {
                   const Icon = categoryIcon(item.category);
+                  const thumb = thumbnails[i];
                   return (
                     <motion.div
                       key={`missing-${i}`}
@@ -264,10 +267,25 @@ const InspirationDetail = () => {
                       transition={{ delay: (matchedItems.length + i) * 0.08 }}
                     >
                       <div className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden">
-                        <Icon className="w-8 h-8 text-muted-foreground/50" />
-                        <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight">
-                          {item.name}
-                        </p>
+                        {thumb ? (
+                          <>
+                            <img
+                              src={thumb}
+                              alt={item.name}
+                              className="w-full h-full object-contain"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
+                              <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Icon className="w-8 h-8 text-muted-foreground/50 animate-pulse" />
+                            <p className="text-[11px] text-muted-foreground font-medium text-center px-2 leading-tight">
+                              {item.name}
+                            </p>
+                          </>
+                        )}
                         <div className="absolute bottom-2 inset-x-0 flex justify-center">
                           <Badge variant="outline" className="text-[9px] gap-1 bg-background/80">
                             Missing

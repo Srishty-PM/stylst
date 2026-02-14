@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, CalendarPlus, Check, ArrowRight, Shirt, Footprints, Watch, ShoppingBag as BagIcon } from 'lucide-react';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
+import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import type { MissingItem } from '@/hooks/useAutoMatch';
 
 const categoryIcon = (category: string) => {
   const c = category?.toLowerCase() || '';
@@ -16,6 +18,38 @@ const categoryIcon = (category: string) => {
   if (c.includes('bag') || c.includes('purse') || c.includes('clutch')) return BagIcon;
   if (c.includes('accessor') || c.includes('jewel') || c.includes('watch') || c.includes('belt')) return Watch;
   return Shirt;
+};
+
+const MissingItemsSection = ({ items }: { items: MissingItem[] }) => {
+  const thumbnails = useMissingThumbnails(items);
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Missing from closet</p>
+      <div className="space-y-2">
+        {items.map((mi, i) => {
+          const Icon = categoryIcon(mi.category);
+          const thumb = thumbnails[i];
+          return (
+            <div key={i} className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-2.5">
+              <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {thumb ? (
+                  <img src={thumb} alt={mi.name} className="w-full h-full object-contain" />
+                ) : (
+                  <Icon className="w-5 h-5 text-muted-foreground animate-pulse" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{mi.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{mi.category}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 interface AutoMatchDialogProps {
@@ -143,27 +177,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage }
             </div>
 
             {/* Missing items — thumbnail placeholders, no shopping */}
-            {result.missing_items && result.missing_items.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Missing from closet</p>
-                <div className="space-y-2">
-                  {result.missing_items.map((mi, i) => {
-                    const Icon = categoryIcon(mi.category);
-                    return (
-                      <div key={i} className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-2.5">
-                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-                          <Icon className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{mi.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{mi.category}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <MissingItemsSection items={result.missing_items} />
 
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-sm text-foreground">{result.reasoning}</p>
