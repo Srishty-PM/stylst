@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import Landing from "@/pages/Landing";
@@ -60,6 +60,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const MatchRedirect = () => {
+  const { inspirationId } = useParams();
+  return <Navigate to={inspirationId ? `/inspiration/${inspirationId}` : '/inspiration'} replace />;
+};
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
@@ -74,8 +79,8 @@ const AppRoutes = () => (
     <Route path="/inspiration" element={<ProtectedRoute><Inspiration /></ProtectedRoute>} />
     <Route path="/inspiration/add" element={<ProtectedRoute><AddInspiration /></ProtectedRoute>} />
     <Route path="/inspiration/:inspirationId" element={<ProtectedRoute><InspirationDetail /></ProtectedRoute>} />
-    <Route path="/match" element={<ProtectedRoute><MatchBuilder /></ProtectedRoute>} />
-    <Route path="/match/:inspirationId" element={<ProtectedRoute><MatchBuilder /></ProtectedRoute>} />
+    <Route path="/match" element={<Navigate to="/inspiration" replace />} />
+    <Route path="/match/:inspirationId" element={<MatchRedirect />} />
     <Route path="/looks" element={<ProtectedRoute><Looks /></ProtectedRoute>} />
     <Route path="/looks/:lookId" element={<ProtectedRoute><LookDetail /></ProtectedRoute>} />
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
