@@ -209,6 +209,7 @@ CRITICAL: It's better to over-match (use a similar item) than to mark something 
           season: match.season || null,
           notes: match.reasoning || null,
           created_by_ai: true,
+          missing_items: missingItems,
         })
         .select()
         .single();
