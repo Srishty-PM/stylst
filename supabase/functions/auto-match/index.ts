@@ -55,27 +55,27 @@ serve(async (req) => {
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    const systemPrompt = `You are an expert fashion stylist AI. You will be shown an inspiration image and a list of clothing items from the user's closet.
+    const systemPrompt = `You are an expert fashion stylist AI with excellent visual perception. You will analyze an inspiration outfit image and match items from the user's closet.
 
-INSTRUCTIONS:
-1. Examine the ENTIRE inspiration image from head to toe
-2. Identify EVERY visible clothing item and accessory
-3. For each item, find the BEST match from the user's closet — be GENEROUS with matching:
-   - A houndstooth blazer matches a plaid blazer
-   - A white button-down shirt matches a white button-up shirt  
-   - Similar colors/styles in the same category should be matched
-   - Prefer matching over marking as missing — only mark as missing if NO similar item exists
-4. Only add to missing_items if there is truly nothing comparable in the closet
+STEP 1 — IDENTIFY every visible clothing item and accessory in the image (head to toe: hat, top, jacket/blazer, bottom/skirt, belt, bag, shoes, jewelry, etc.)
 
-MATCHING RULES:
-- Same category + similar style = MATCH (even if not identical)
-- Same category + different color but similar silhouette = MATCH
-- Only mark missing if the category itself is absent from the closet
+STEP 2 — For EACH identified item, search the user's closet list below for the closest match.
 
-User's closet items:
+MATCHING RULES (be GENEROUS — prefer matching over missing):
+- "Houndstooth Blazer" matches a plaid/check blazer in the inspiration
+- "White Button-Down Shirt" matches a white button-up or white blouse
+- "Black Wide-Leg Trousers" matches black pants/trousers
+- "Blue Denim Jeans" matches jeans/denim pants
+- "Black Mary Jane Flats" matches black flats or similar black shoes
+- Same category + similar style/color = MATCH even if not identical
+- Only mark as MISSING if NO item in the same category with a remotely similar style exists
+
+STEP 3 — Verify: count items in image vs (matched + missing). They MUST equal.
+
+User's closet (${items.length} items):
 ${closetList}
 
-Every visible garment/accessory MUST appear in either matched_item_ids or missing_items.`;
+Return matched_item_ids (closet IDs) and missing_items (items to buy).`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
@@ -83,7 +83,7 @@ Every visible garment/accessory MUST appear in either matched_item_ids or missin
         role: "user",
         content: [
           { type: "image_url", image_url: { url: inspiration.image_url } },
-          { type: "text", text: "Analyze this inspiration look. Match items from my closet and identify any missing pieces I'd need to buy to complete the look." },
+          { type: "text", text: "Analyze this inspiration look. Match items from my closet and identify any missing pieces I'd need to buy to complete the look. Remember: be generous with matching — if I have a similar item, use it." },
         ],
       },
     ];
@@ -95,7 +95,7 @@ Every visible garment/accessory MUST appear in either matched_item_ids or missin
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages,
         tools: [
           {
