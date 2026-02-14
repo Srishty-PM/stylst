@@ -164,43 +164,7 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
     // Get matched items details for response
     const matchedItems = items.filter((i: any) => matchedIds.includes(i.id));
 
-    // Generate thumbnails for missing items in parallel
-    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await Promise.all(missingItems.map(async (mi: any) => {
-      try {
-        const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite",
-            messages: [{
-              role: "user",
-              content: `Generate a clean product photo of: ${mi.name}. ${mi.description || ''} Category: ${mi.category}. White background, professional e-commerce style, centered. No text.`,
-            }],
-            modalities: ["image", "text"],
-          }),
-        });
-        if (imgRes.ok) {
-          const imgData = await imgRes.json();
-          const b64 = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-          if (b64) {
-            const raw = b64.replace(/^data:image\/\w+;base64,/, "");
-            const bin = atob(raw);
-            const bytes = new Uint8Array(bin.length);
-            for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
-            const thumbPath = `missing-thumbnails/${user.id}/${crypto.randomUUID()}.png`;
-            await supabaseAdmin.storage.from("closet-images").upload(thumbPath, bytes, { contentType: "image/png", upsert: true });
-            const { data: pubUrl } = supabaseAdmin.storage.from("closet-images").getPublicUrl(thumbPath);
-            mi.thumbnail_url = pubUrl.publicUrl;
-          }
-        }
-      } catch (thumbErr) {
-        console.error("Thumbnail gen failed for", mi.name, thumbErr);
-      }
-    }));
+    // Skip thumbnail generation for speed — placeholders used in UI
 
     // If save_look is true, persist the look to the database
     let look = null;
