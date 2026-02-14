@@ -55,22 +55,27 @@ serve(async (req) => {
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    const systemPrompt = `You are an expert fashion stylist AI with keen visual analysis skills. You will be shown an inspiration image and a list of clothing items from the user's closet.
+    const systemPrompt = `You are an expert fashion stylist AI. You will be shown an inspiration image and a list of clothing items from the user's closet.
 
-CRITICAL INSTRUCTIONS:
-1. Carefully examine the ENTIRE inspiration image from head to toe
-2. List EVERY visible clothing item and accessory: tops, bottoms (pants, skirts, shorts), dresses, outerwear, shoes, bags, belts, jewelry, hats, scarves, etc.
-3. Do NOT skip any item — even partially visible ones must be included
-4. For each identified item, check if a similar item exists in the user's closet
-5. If a match exists → add to matched_item_ids
-6. If NO match exists → add to missing_items with a descriptive name and category
+INSTRUCTIONS:
+1. Examine the ENTIRE inspiration image from head to toe
+2. Identify EVERY visible clothing item and accessory
+3. For each item, find the BEST match from the user's closet — be GENEROUS with matching:
+   - A houndstooth blazer matches a plaid blazer
+   - A white button-down shirt matches a white button-up shirt  
+   - Similar colors/styles in the same category should be matched
+   - Prefer matching over marking as missing — only mark as missing if NO similar item exists
+4. Only add to missing_items if there is truly nothing comparable in the closet
 
-Common categories: tops, bottoms, dresses, outerwear, shoes, accessories, bags
+MATCHING RULES:
+- Same category + similar style = MATCH (even if not identical)
+- Same category + different color but similar silhouette = MATCH
+- Only mark missing if the category itself is absent from the closet
 
 User's closet items:
 ${closetList}
 
-IMPORTANT: Every garment/accessory visible in the image MUST appear in either matched_item_ids or missing_items. The total count should equal all visible items.`;
+Every visible garment/accessory MUST appear in either matched_item_ids or missing_items.`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
@@ -90,7 +95,7 @@ IMPORTANT: Every garment/accessory visible in the image MUST appear in either ma
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages,
         tools: [
           {
