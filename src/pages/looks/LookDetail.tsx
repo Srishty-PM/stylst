@@ -56,8 +56,13 @@ const LookDetail = () => {
 
       <div className="grid grid-cols-2 gap-2 max-w-md mx-auto rounded-xl overflow-hidden">
         {items.slice(0, 4).map((item, idx) => (
-          <div key={idx} className="aspect-square">
-            <img src={item!.image_url} alt={item!.name} className="w-full h-full object-cover" />
+          <div key={idx} className="aspect-square bg-muted">
+            <img
+              src={item!.image_url_cleaned || item!.image_url}
+              alt={item!.name}
+              className="w-full h-full object-contain"
+              style={{ imageOrientation: 'from-image' }}
+            />
           </div>
         ))}
       </div>
@@ -94,7 +99,7 @@ const LookDetail = () => {
               <Link key={item!.id} to={`/closet/${item!.id}`}>
                 <Card className="hover:shadow-sm transition-shadow">
                   <CardContent className="p-3 flex items-center gap-3">
-                    <img src={item!.image_url} alt={item!.name} className="w-12 h-12 rounded-lg object-cover" />
+                    <img src={item!.image_url_cleaned || item!.image_url} alt={item!.name} className="w-12 h-12 rounded-lg object-contain bg-muted" style={{ imageOrientation: 'from-image' }} />
                     <div>
                       <p className="text-sm font-medium text-foreground">{item!.name}</p>
                       <p className="text-xs text-muted-foreground capitalize">{item!.category}</p>
