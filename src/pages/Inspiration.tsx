@@ -77,11 +77,8 @@ const Inspiration = () => {
                       variant="secondary"
                       onClick={(e) => { e.stopPropagation(); setAutoMatchItem({ id: item.id, image_url: item.image_url }); }}
                     >
-                      <Sparkles className="w-3 h-3 mr-1" /> Auto
+                      <Sparkles className="w-3 h-3 mr-1" /> Match This
                     </Button>
-                    <Link to={`/match/${item.id}`} onClick={e => e.stopPropagation()}>
-                      <Button size="sm" variant="secondary">Manual</Button>
-                    </Link>
                     <Button
                       size="sm"
                       variant="destructive"
