@@ -55,18 +55,22 @@ serve(async (req) => {
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    const systemPrompt = `You are a fashion stylist AI. You will be shown an inspiration image and a list of clothing items from the user's closet. 
-Your job is to:
-1. Identify ALL clothing/accessory items visible in the inspiration image
-2. For each item in the inspiration, find the BEST match from the user's closet (if one exists)
-3. For items in the inspiration that have NO good match in the closet, list them as "missing items" the user would need to buy
+    const systemPrompt = `You are an expert fashion stylist AI with keen visual analysis skills. You will be shown an inspiration image and a list of clothing items from the user's closet.
+
+CRITICAL INSTRUCTIONS:
+1. Carefully examine the ENTIRE inspiration image from head to toe
+2. List EVERY visible clothing item and accessory: tops, bottoms (pants, skirts, shorts), dresses, outerwear, shoes, bags, belts, jewelry, hats, scarves, etc.
+3. Do NOT skip any item — even partially visible ones must be included
+4. For each identified item, check if a similar item exists in the user's closet
+5. If a match exists → add to matched_item_ids
+6. If NO match exists → add to missing_items with a descriptive name and category
+
+Common categories: tops, bottoms, dresses, outerwear, shoes, accessories, bags
 
 User's closet items:
 ${closetList}
 
-Analyze the inspiration image carefully. For each visible garment/accessory:
-- If a good match exists in the closet, include its ID in matched_item_ids
-- If no match exists, add it to missing_items with a descriptive name and category`;
+IMPORTANT: Every garment/accessory visible in the image MUST appear in either matched_item_ids or missing_items. The total count should equal all visible items.`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
@@ -86,7 +90,7 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-2.5-flash",
         messages,
         tools: [
           {
