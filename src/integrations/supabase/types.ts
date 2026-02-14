@@ -192,6 +192,7 @@ export type Database = {
           id: string
           inspiration_id: string | null
           is_favorite: boolean
+          missing_items: Json | null
           name: string
           notes: string | null
           occasion: string | null
@@ -207,6 +208,7 @@ export type Database = {
           id?: string
           inspiration_id?: string | null
           is_favorite?: boolean
+          missing_items?: Json | null
           name: string
           notes?: string | null
           occasion?: string | null
@@ -222,6 +224,7 @@ export type Database = {
           id?: string
           inspiration_id?: string | null
           is_favorite?: boolean
+          missing_items?: Json | null
           name?: string
           notes?: string | null
           occasion?: string | null
