@@ -44,7 +44,7 @@ const Dashboard = () => {
   const quickActions = [
     { label: 'Add to Closet', to: '/closet/add', icon: Plus },
     { label: 'Add Inspiration', to: '/inspiration/add', icon: ImageIcon },
-    { label: 'Match Outfit', to: '/match', icon: Layers },
+    { label: 'Match Outfit', to: '/inspiration', icon: Layers },
     { label: 'Plan Week', to: '/calendar', icon: CalendarDays },
   ];
 
@@ -181,7 +181,7 @@ const Dashboard = () => {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground text-sm">
-              No looks yet. <Link to="/match" className="text-primary font-medium hover:underline">Create your first look</Link>
+              No looks yet. <Link to="/inspiration" className="text-primary font-medium hover:underline">Create your first look</Link>
             </CardContent>
           </Card>
         )}
@@ -197,7 +197,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {inspirations.slice(0, 8).map((item, i) => (
               <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
-                <Link to={`/match/${item.id}`}>
+                <Link to={`/inspiration/${item.id}`}>
                   <div className="aspect-[3/4] rounded-lg overflow-hidden relative group">
                     <img src={item.image_url} alt={item.description || 'Inspiration'} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors flex items-end p-2 opacity-0 group-hover:opacity-100">
