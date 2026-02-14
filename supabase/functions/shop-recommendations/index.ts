@@ -53,7 +53,7 @@ Generate exactly 6 product recommendations that match this item. For each produc
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: "You are a fashion shopping expert. Return structured product recommendations." },
           { role: "user", content: prompt },
