@@ -71,7 +71,7 @@ const Inspiration = () => {
             <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
               <div
                 className="relative rounded-sm overflow-hidden group break-inside-avoid cursor-pointer"
-                onClick={() => navigate(`/inspiration/${item.id}`)}
+                onClick={(e) => handleMatch(e, { id: item.id, image_url: item.image_url })}
               >
                 <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
 

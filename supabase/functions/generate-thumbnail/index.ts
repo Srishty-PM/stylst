@@ -41,9 +41,44 @@ serve(async (req) => {
     }
 
     const result = await response.json();
-    const imageUrl = result.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    console.log("AI response structure:", JSON.stringify(result.choices?.[0]?.message).substring(0, 500));
+
+    // Try multiple possible response formats for the image URL
+    const message = result.choices?.[0]?.message;
+    let imageUrl: string | undefined;
+
+    // Format 1: inline_data in parts
+    if (message?.parts) {
+      for (const part of message.parts) {
+        if (part.inline_data?.data) {
+          imageUrl = `data:${part.inline_data.mime_type || 'image/png'};base64,${part.inline_data.data}`;
+          break;
+        }
+      }
+    }
+
+    // Format 2: images array
+    if (!imageUrl && message?.images?.[0]) {
+      const img = message.images[0];
+      imageUrl = img.image_url?.url || img.url || img;
+    }
+
+    // Format 3: content array with image parts
+    if (!imageUrl && Array.isArray(message?.content)) {
+      for (const part of message.content) {
+        if (part.type === 'image_url') {
+          imageUrl = part.image_url?.url;
+          break;
+        }
+        if (part.type === 'image' && part.source?.data) {
+          imageUrl = `data:${part.source.media_type || 'image/png'};base64,${part.source.data}`;
+          break;
+        }
+      }
+    }
 
     if (!imageUrl) {
+      console.error("No image found in response. Full message:", JSON.stringify(message).substring(0, 1000));
       return new Response(JSON.stringify({ error: "No image generated" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
