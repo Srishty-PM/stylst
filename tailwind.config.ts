@@ -9,13 +9,14 @@ export default {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1280px",
       },
     },
     extend: {
       fontFamily: {
-        sans: ['Instrument Sans', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         display: ['Cormorant Garamond', 'serif'],
+        serif: ['Cormorant Garamond', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -69,11 +70,28 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        obsidian: "#0A0A0A",
+        ivory: "#FAFAF8",
+        charcoal: "#2C2C2C",
+        gold: "#B8936E",
+        bone: "#E8E3DA",
+        slate: "#64748B",
+        forest: "#2C5F2D",
+        amber: "#C2873A",
+        crimson: "#8B1538",
+        midnight: "#1E3A5F",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontSize: {
+        'display': ['72px', { lineHeight: '80px', letterSpacing: '-0.02em' }],
+        'h1': ['56px', { lineHeight: '64px', letterSpacing: '-0.02em' }],
+        'h2': ['40px', { lineHeight: '48px', letterSpacing: '-0.01em' }],
+        'h3': ['32px', { lineHeight: '40px' }],
+        'h4': ['24px', { lineHeight: '32px' }],
       },
       keyframes: {
         "accordion-down": {
