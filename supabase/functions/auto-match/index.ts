@@ -86,7 +86,7 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages,
         tools: [
           {
@@ -164,9 +164,9 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
     // Get matched items details for response
     const matchedItems = items.filter((i: any) => matchedIds.includes(i.id));
 
-    // Generate thumbnails for missing items using AI image generation
+    // Generate thumbnails for missing items in parallel
     const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    for (const mi of missingItems) {
+    await Promise.all(missingItems.map(async (mi: any) => {
       try {
         const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -175,10 +175,10 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-2.5-flash-lite",
             messages: [{
               role: "user",
-              content: `Generate a clean product photo of: ${mi.name}. ${mi.description || ''} Category: ${mi.category}. White background, professional e-commerce style, centered, portrait orientation. No text or watermarks.`,
+              content: `Generate a clean product photo of: ${mi.name}. ${mi.description || ''} Category: ${mi.category}. White background, professional e-commerce style, centered. No text.`,
             }],
             modalities: ["image", "text"],
           }),
@@ -200,7 +200,7 @@ Analyze the inspiration image carefully. For each visible garment/accessory:
       } catch (thumbErr) {
         console.error("Thumbnail gen failed for", mi.name, thumbErr);
       }
-    }
+    }));
 
     // If save_look is true, persist the look to the database
     let look = null;
