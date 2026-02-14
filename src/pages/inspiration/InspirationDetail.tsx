@@ -147,7 +147,7 @@ const InspirationDetail = () => {
         <img
           src={inspiration.image_url}
           alt={inspiration.description || 'Fashion inspiration'}
-          className="w-full max-h-[200px] md:max-h-[300px] object-contain"
+          className="w-full max-h-[180px] md:max-h-[250px] object-contain"
         />
       </div>
 
