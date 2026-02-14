@@ -42,7 +42,7 @@ const Looks = () => {
                   <Card className="overflow-hidden hover:shadow-md transition-shadow">
                     <div className="grid grid-cols-2 aspect-[4/3]">
                       {items.slice(0, 4).map((item, idx) => (
-                        <img key={idx} src={item!.image_url} alt={item!.name} className="w-full h-full object-cover" />
+                        <img key={idx} src={item!.image_url_cleaned || item!.image_url} alt={item!.name} className="w-full h-full object-contain bg-muted" style={{ imageOrientation: 'from-image' }} />
                       ))}
                     </div>
                     <CardContent className="p-4">
