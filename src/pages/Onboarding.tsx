@@ -311,7 +311,7 @@ const Onboarding = () => {
                   <Button variant="outline" className="flex-1" onClick={() => setStep('pinterest')}>
                     Skip
                   </Button>
-                  <Button className="flex-1" disabled={inspoFiles.length === 0 || inspoUploading} onClick={async () => { await handleUploadInspoAndContinue(); setStep('pinterest'); }}>
+                  <Button className="flex-1" disabled={inspoFiles.length === 0 || inspoUploading} onClick={async () => { await handleUploadInspo(); setStep('pinterest'); }}>
                     {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
                   </Button>
                 </div>
