@@ -21,7 +21,7 @@ import { CATEGORIES } from '@/lib/mock-data';
 const VALID_CATEGORIES = CATEGORIES.filter(c => c !== 'All').map(c => c.toLowerCase());
 const COLOR_OPTIONS = ['Black','White','Gray','Navy','Blue','Red','Green','Yellow','Orange','Pink','Purple','Brown','Beige','Cream'];
 
-type Step = 'welcome' | 'inspiration' | 'closet' | 'processing' | 'review' | 'review-summary' | 'matching' | 'results' | 'done';
+type Step = 'welcome' | 'inspiration' | 'pinterest' | 'closet' | 'processing' | 'review' | 'review-summary' | 'matching' | 'results' | 'done';
 
 interface ClosetUpload {
   id: number; file: File; preview: string; imageUrl?: string;
