@@ -273,7 +273,7 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* INSPIRATION — two independent options */}
+            {/* INSPIRATION — Upload photos */}
             {step === 'inspiration' && (
               <motion.div key="inspiration" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                 <button onClick={() => setStep('welcome')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -282,72 +282,79 @@ const Onboarding = () => {
 
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground">Upload Inspiration</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Add outfit ideas you love — choose one or both options</p>
+                  <p className="text-sm text-muted-foreground mt-1">Add outfit ideas you love</p>
                 </div>
 
-                {/* Option 1: Upload photos */}
-                <div className="space-y-3">
-                  <label className="block cursor-pointer">
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/40 transition-colors">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm font-medium text-foreground">Upload Photos</p>
-                      <p className="text-xs text-muted-foreground">Screenshots, saved images, magazine photos</p>
+                <label className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/40 transition-colors">
+                    <ImageIcon className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm font-medium text-foreground">Tap to upload photos</p>
+                    <p className="text-xs text-muted-foreground mt-1">Screenshots, saved images, magazine photos</p>
+                  </div>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
+                </label>
+
+                {inspoPreviews.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">{inspoPreviews.length} photos selected</p>
+                    <div className="grid grid-cols-5 gap-1.5 max-h-24 overflow-y-auto">
+                      {inspoPreviews.map((url, i) => (
+                        <div key={i} className="aspect-square rounded-lg overflow-hidden relative group">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-foreground/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => { setInspoFiles(prev => prev.filter((_, idx) => idx !== i)); setInspoPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
+                            <X className="w-2.5 h-2.5 text-background" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
-                  </label>
-                  {inspoPreviews.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">{inspoPreviews.length} photos selected</p>
-                      <div className="grid grid-cols-5 gap-1.5 max-h-24 overflow-y-auto">
-                        {inspoPreviews.map((url, i) => (
-                          <div key={i} className="aspect-square rounded-lg overflow-hidden relative group">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-foreground/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => { setInspoFiles(prev => prev.filter((_, idx) => idx !== i)); setInspoPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
-                              <X className="w-2.5 h-2.5 text-background" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setStep('pinterest')}>
+                    Skip
+                  </Button>
+                  <Button className="flex-1" disabled={inspoFiles.length === 0 || inspoUploading} onClick={async () => { await handleUploadInspoAndContinue(); setStep('pinterest'); }}>
+                    {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* PINTEREST SYNC (optional) */}
+            {step === 'pinterest' && (
+              <motion.div key="pinterest" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <button onClick={() => setStep('inspiration')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Sync Pinterest</h2>
+                  <p className="text-sm text-muted-foreground mt-1">(optional)</p>
                 </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-muted-foreground">or</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-
-                {/* Option 2: Sync Pinterest */}
                 <Button
                   variant="outline"
-                  className="w-full h-auto py-4 flex items-center gap-3"
+                  className="w-full h-auto py-6 flex items-center gap-4"
                   onClick={connectPinterest}
                   disabled={pinterestLoading}
                 >
-                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-destructive" fill="currentColor">
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-destructive" fill="currentColor">
                       <path d="M12 0a12 12 0 0 0-4.37 23.17c-.1-.94-.2-2.4.04-3.44l1.4-5.96s-.36-.72-.36-1.78c0-1.67.97-2.92 2.17-2.92 1.02 0 1.52.77 1.52 1.7 0 1.03-.66 2.58-1 4.01-.28 1.2.6 2.17 1.78 2.17 2.14 0 3.78-2.26 3.78-5.52 0-2.89-2.07-4.9-5.04-4.9-3.43 0-5.44 2.57-5.44 5.23 0 1.04.4 2.15.9 2.75a.36.36 0 0 1 .08.35l-.33 1.36c-.05.22-.18.27-.4.16-1.5-.7-2.43-2.9-2.43-4.67 0-3.8 2.76-7.3 7.96-7.3 4.17 0 7.42 2.98 7.42 6.95 0 4.15-2.61 7.49-6.24 7.49-1.22 0-2.37-.63-2.76-1.38l-.75 2.86c-.27 1.04-1 2.35-1.49 3.15A12 12 0 1 0 12 0z"/>
                     </svg>
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-medium text-foreground">Sync Pinterest</p>
+                    <p className="text-sm font-medium text-foreground">Connect Pinterest</p>
                     <p className="text-xs text-muted-foreground">Import pins from your boards</p>
                   </div>
                   {pinterestLoading && <Loader2 className="w-4 h-4 animate-spin ml-auto" />}
                 </Button>
 
-                {/* Continue */}
-                <div className="flex gap-3 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={async () => { await updateOnboardingStep(2); setStep('closet'); }}>
-                    Skip
-                  </Button>
-                  <Button className="flex-1" disabled={inspoFiles.length === 0 || inspoUploading} onClick={handleUploadInspoAndContinue}>
-                    {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
-                  </Button>
-                </div>
+                <Button className="w-full" size="lg" onClick={async () => { await updateOnboardingStep(2); setStep('closet'); }}>
+                  Continue <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </motion.div>
             )}
 
