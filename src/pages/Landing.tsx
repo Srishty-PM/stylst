@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ShirtIcon, Camera, CalendarDays, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/landing-hero.jpg';
-import stylstLogo from '@/assets/stylst-logo.png';
+const heroImage = new URL('@/assets/landing-hero.jpg', import.meta.url).href;
+const stylstLogo = new URL('@/assets/stylst-logo.png', import.meta.url).href;
 
 const features = [
   { icon: Camera, title: 'Digitize Your Closet', desc: 'Photograph every piece. AI catalogs color, style, and season instantly.' },
