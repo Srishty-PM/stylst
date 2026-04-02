@@ -35,7 +35,7 @@ interface MatchResult {
   inspirationId: string; reasoning: string;
 }
 
-const STEP_PROGRESS: Record<Step, number> = { welcome: 0, inspiration: 25, closet: 50, processing: 60, review: 60, 'review-summary': 75, matching: 85, results: 100, done: 100 };
+const STEP_PROGRESS: Record<Step, number> = { welcome: 0, inspiration: 20, pinterest: 30, closet: 50, processing: 60, review: 60, 'review-summary': 75, matching: 85, results: 100, done: 100 };
 
 const Onboarding = () => {
   const { user, profile, completeOnboarding, updateOnboardingStep } = useAuth();
