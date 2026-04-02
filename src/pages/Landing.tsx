@@ -23,6 +23,8 @@ const Landing = () => {
             src={heroImage}
             alt="Fashion editorial"
             className="w-full h-full object-cover"
+            fetchPriority="high"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/30 to-foreground/80" />
         </div>
