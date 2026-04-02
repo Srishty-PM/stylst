@@ -76,24 +76,20 @@ const Onboarding = () => {
     setInspoPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
   };
 
-  const handleUploadInspoAndContinue = async () => {
-    if (!user) return;
-    if (inspoFiles.length > 0) {
-      setInspoUploading(true);
-      const ids: { id: string; image_url: string }[] = [];
-      for (const file of inspoFiles) {
-        try {
-          const imageUrl = await uploadInspirationImage(user.id, file);
-          const result = await addInspo.mutateAsync({ user_id: user.id, image_url: imageUrl });
-          ids.push({ id: result.id, image_url: imageUrl });
-        } catch (err) { console.error('Inspo upload error:', err); }
-      }
-      setUploadedInspoIds(ids);
-      setInspoUploading(false);
-      if (ids.length > 0) toast({ title: `${ids.length} inspiration photos added` });
+  const handleUploadInspo = async () => {
+    if (!user || inspoFiles.length === 0) return;
+    setInspoUploading(true);
+    const ids: { id: string; image_url: string }[] = [];
+    for (const file of inspoFiles) {
+      try {
+        const imageUrl = await uploadInspirationImage(user.id, file);
+        const result = await addInspo.mutateAsync({ user_id: user.id, image_url: imageUrl });
+        ids.push({ id: result.id, image_url: imageUrl });
+      } catch (err) { console.error('Inspo upload error:', err); }
     }
-    await updateOnboardingStep(2);
-    setStep('closet');
+    setUploadedInspoIds(ids);
+    setInspoUploading(false);
+    if (ids.length > 0) toast({ title: `${ids.length} inspiration photos added` });
   };
 
   // Closet handlers
