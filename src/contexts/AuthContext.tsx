@@ -47,8 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // If the session was ephemeral (user didn't check "keep me logged in"),
-    // sign out when the browser is reopened (sessionStorage is cleared on close)
     const wasEphemeral = localStorage.getItem('stylst_ephemeral_session');
     if (wasEphemeral && !sessionStorage.getItem('stylst_ephemeral_session')) {
       localStorage.removeItem('stylst_ephemeral_session');
@@ -56,20 +54,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Set up auth listener FIRST
+    let initialDone = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        setTimeout(() => fetchProfile(session.user.id), 0);
-      } else {
-        setUser(null);
-        setProfile(null);
+      if (initialDone) {
+        if (session?.user) {
+          setUser(session.user);
+          setTimeout(() => fetchProfile(session.user.id), 0);
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
-    // THEN check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      initialDone = true;
       if (session?.user) {
         setUser(session.user);
         fetchProfile(session.user.id);

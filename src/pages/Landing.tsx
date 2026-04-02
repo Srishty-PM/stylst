@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ShirtIcon, Camera, CalendarDays, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/landing-hero.jpg';
-import stylstLogo from '@/assets/stylst-logo.png';
+const heroImage = new URL('@/assets/landing-hero.jpg', import.meta.url).href;
+const stylstLogo = new URL('@/assets/stylst-logo.png', import.meta.url).href;
 
 const features = [
   { icon: Camera, title: 'Digitize Your Closet', desc: 'Photograph every piece. AI catalogs color, style, and season instantly.' },
@@ -23,6 +23,8 @@ const Landing = () => {
             src={heroImage}
             alt="Fashion editorial"
             className="w-full h-full object-cover"
+            fetchPriority="high"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/30 to-foreground/80" />
         </div>
