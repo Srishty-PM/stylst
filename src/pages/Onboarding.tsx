@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import {
-  ArrowRight, Sparkles, Loader2, Check, X,
+  ArrowRight, Sparkles, Loader2, Check, X, Upload,
   ImageIcon, ShirtIcon, ChevronLeft, Pencil,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
 import { useAddClosetItem, uploadClosetImage } from '@/hooks/useClosetItems';
+import { usePinterestConnect } from '@/hooks/usePinterest';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CATEGORIES } from '@/lib/mock-data';
@@ -34,23 +35,24 @@ interface MatchResult {
   inspirationId: string; reasoning: string;
 }
 
-const STEP_PROGRESS: Record<Step, number> = { welcome: 0, upload: 33, processing: 50, review: 50, 'review-summary': 66, matching: 80, results: 100, done: 100 };
+const STEP_PROGRESS: Record<Step, number> = { welcome: 0, inspiration: 25, closet: 50, processing: 60, review: 60, 'review-summary': 75, matching: 85, results: 100, done: 100 };
 
 const Onboarding = () => {
   const { user, profile, completeOnboarding, updateOnboardingStep } = useAuth();
   const navigate = useNavigate();
   const addInspo = useAddInspiration();
   const addClosetItem = useAddClosetItem();
+  const { connect: connectPinterest, loading: pinterestLoading } = usePinterestConnect();
 
-  const [step, setStep] = useState<Step>(profile?.onboarding_step && profile.onboarding_step >= 2 ? 'upload' : 'welcome');
+  const [step, setStep] = useState<Step>(profile?.onboarding_step && profile.onboarding_step >= 2 ? 'closet' : 'welcome');
 
-  // Combined upload state
   const [inspoFiles, setInspoFiles] = useState<File[]>([]);
   const [inspoPreviews, setInspoPreviews] = useState<string[]>([]);
-  const [closetFiles, setClosetFiles] = useState<File[]>([]);
-  const [closetPreviews, setClosetPreviews] = useState<string[]>([]);
+  const [inspoUploading, setInspoUploading] = useState(false);
   const [uploadedInspoIds, setUploadedInspoIds] = useState<{ id: string; image_url: string }[]>([]);
 
+  const [closetFiles, setClosetFiles] = useState<File[]>([]);
+  const [closetPreviews, setClosetPreviews] = useState<string[]>([]);
   const [closetItems, setClosetItems] = useState<ClosetUpload[]>([]);
   const [closetSaving, setClosetSaving] = useState(false);
   const [savedItemIds, setSavedItemIds] = useState<string[]>([]);
@@ -65,6 +67,7 @@ const Onboarding = () => {
 
   const [matches, setMatches] = useState<MatchResult[]>([]);
 
+  // Inspiration handlers
   const handleInspoFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -73,6 +76,27 @@ const Onboarding = () => {
     setInspoPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
   };
 
+  const handleUploadInspoAndContinue = async () => {
+    if (!user) return;
+    if (inspoFiles.length > 0) {
+      setInspoUploading(true);
+      const ids: { id: string; image_url: string }[] = [];
+      for (const file of inspoFiles) {
+        try {
+          const imageUrl = await uploadInspirationImage(user.id, file);
+          const result = await addInspo.mutateAsync({ user_id: user.id, image_url: imageUrl });
+          ids.push({ id: result.id, image_url: imageUrl });
+        } catch (err) { console.error('Inspo upload error:', err); }
+      }
+      setUploadedInspoIds(ids);
+      setInspoUploading(false);
+      if (ids.length > 0) toast({ title: `${ids.length} inspiration photos added` });
+    }
+    await updateOnboardingStep(2);
+    setStep('closet');
+  };
+
+  // Closet handlers
   const handleClosetFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -81,25 +105,10 @@ const Onboarding = () => {
     setClosetPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
   };
 
-  // Combined upload + analyze
-  const handleContinue = async () => {
+  const handleAnalyzeCloset = async () => {
     if (!user || closetFiles.length === 0) return;
-    await updateOnboardingStep(2);
     setStep('processing');
 
-    // Upload inspiration in background
-    const inspoIds: { id: string; image_url: string }[] = [];
-    for (const file of inspoFiles) {
-      try {
-        const imageUrl = await uploadInspirationImage(user.id, file);
-        const result = await addInspo.mutateAsync({ user_id: user.id, image_url: imageUrl });
-        inspoIds.push({ id: result.id, image_url: imageUrl });
-      } catch (err) { console.error('Inspo upload error:', err); }
-    }
-    setUploadedInspoIds(inspoIds);
-    if (inspoIds.length > 0) toast({ title: `${inspoIds.length} inspiration photos added` });
-
-    // Upload + analyze closet
     const items: ClosetUpload[] = closetFiles.map((file, i) => ({
       id: Date.now() + i, file, preview: URL.createObjectURL(file),
       name: '', category: '', colors: [], brand: null,
@@ -240,12 +249,11 @@ const Onboarding = () => {
                   <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">Welcome to Stylst</h1>
                   <p className="text-muted-foreground text-sm max-w-xs mx-auto">Your AI personal stylist. Upload your photos, we handle the rest.</p>
                 </div>
-
                 <div className="grid grid-cols-3 gap-3 text-center">
                   {[
-                    { emoji: '📸', title: 'Upload', desc: 'Inspo + closet' },
-                    { emoji: '✨', title: 'AI Match', desc: 'Auto outfits' },
-                    { emoji: '📅', title: 'Wear', desc: 'Plan & schedule' },
+                    { emoji: '📸', title: 'Inspire', desc: 'Add outfit ideas' },
+                    { emoji: '👗', title: 'Closet', desc: 'Upload clothes' },
+                    { emoji: '✨', title: 'Match', desc: 'AI creates looks' },
                   ].map(s => (
                     <div key={s.title} className="p-4 rounded-lg bg-card border border-border">
                       <span className="text-2xl">{s.emoji}</span>
@@ -254,9 +262,8 @@ const Onboarding = () => {
                     </div>
                   ))}
                 </div>
-
                 <div className="space-y-3">
-                  <Button className="w-full" size="lg" onClick={async () => { await updateOnboardingStep(1); setStep('upload'); }}>
+                  <Button className="w-full" size="lg" onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
                     Get Started <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                   <button className="text-xs text-muted-foreground hover:text-foreground transition-colors" onClick={handleFinish}>
@@ -266,69 +273,37 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* COMBINED UPLOAD */}
-            {step === 'upload' && (
-              <motion.div key="upload" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+            {/* INSPIRATION — two independent options */}
+            {step === 'inspiration' && (
+              <motion.div key="inspiration" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                 <button onClick={() => setStep('welcome')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
 
                 <div>
-                  <h2 className="font-display text-2xl font-bold text-foreground">Upload Your Photos</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Add inspiration and closet photos in one go</p>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Upload Inspiration</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Add outfit ideas you love — choose one or both options</p>
                 </div>
 
-                {/* Inspiration section */}
+                {/* Option 1: Upload photos */}
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Inspiration (optional)</p>
                   <label className="block cursor-pointer">
                     <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/40 transition-colors">
                       <ImageIcon className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm font-medium text-foreground">Add outfit ideas</p>
-                      <p className="text-xs text-muted-foreground">Pinterest saves, Instagram screenshots, etc.</p>
+                      <p className="text-sm font-medium text-foreground">Upload Photos</p>
+                      <p className="text-xs text-muted-foreground">Screenshots, saved images, magazine photos</p>
                     </div>
                     <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
                   </label>
                   {inspoPreviews.length > 0 && (
-                    <div className="grid grid-cols-5 gap-1.5 max-h-24 overflow-y-auto">
-                      {inspoPreviews.map((url, i) => (
-                        <div key={i} className="aspect-square rounded-lg overflow-hidden relative group">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-foreground/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => { setInspoFiles(prev => prev.filter((_, idx) => idx !== i)); setInspoPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
-                            <X className="w-2.5 h-2.5 text-background" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Closet section */}
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Closet *</p>
-                  <label className="block cursor-pointer">
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/40 transition-colors">
-                      <ShirtIcon className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm font-medium text-foreground">Add closet items</p>
-                      <p className="text-xs text-muted-foreground">One item per photo · Up to 50</p>
-                    </div>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
-                  </label>
-                  {closetPreviews.length > 0 && (
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs text-muted-foreground">{closetPreviews.length} items</p>
-                        <label className="text-xs text-primary cursor-pointer hover:underline">
-                          Add more <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
-                        {closetPreviews.map((url, i) => (
+                      <p className="text-xs text-muted-foreground">{inspoPreviews.length} photos selected</p>
+                      <div className="grid grid-cols-5 gap-1.5 max-h-24 overflow-y-auto">
+                        {inspoPreviews.map((url, i) => (
                           <div key={i} className="aspect-square rounded-lg overflow-hidden relative group">
                             <img src={url} alt="" className="w-full h-full object-cover" />
                             <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-foreground/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => { setClosetFiles(prev => prev.filter((_, idx) => idx !== i)); setClosetPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
+                              onClick={() => { setInspoFiles(prev => prev.filter((_, idx) => idx !== i)); setInspoPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
                               <X className="w-2.5 h-2.5 text-background" />
                             </button>
                           </div>
@@ -338,7 +313,84 @@ const Onboarding = () => {
                   )}
                 </div>
 
-                <Button className="w-full" size="lg" disabled={closetFiles.length === 0} onClick={handleContinue}>
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Option 2: Sync Pinterest */}
+                <Button
+                  variant="outline"
+                  className="w-full h-auto py-4 flex items-center gap-3"
+                  onClick={connectPinterest}
+                  disabled={pinterestLoading}
+                >
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-destructive" fill="currentColor">
+                      <path d="M12 0a12 12 0 0 0-4.37 23.17c-.1-.94-.2-2.4.04-3.44l1.4-5.96s-.36-.72-.36-1.78c0-1.67.97-2.92 2.17-2.92 1.02 0 1.52.77 1.52 1.7 0 1.03-.66 2.58-1 4.01-.28 1.2.6 2.17 1.78 2.17 2.14 0 3.78-2.26 3.78-5.52 0-2.89-2.07-4.9-5.04-4.9-3.43 0-5.44 2.57-5.44 5.23 0 1.04.4 2.15.9 2.75a.36.36 0 0 1 .08.35l-.33 1.36c-.05.22-.18.27-.4.16-1.5-.7-2.43-2.9-2.43-4.67 0-3.8 2.76-7.3 7.96-7.3 4.17 0 7.42 2.98 7.42 6.95 0 4.15-2.61 7.49-6.24 7.49-1.22 0-2.37-.63-2.76-1.38l-.75 2.86c-.27 1.04-1 2.35-1.49 3.15A12 12 0 1 0 12 0z"/>
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Sync Pinterest</p>
+                    <p className="text-xs text-muted-foreground">Import pins from your boards</p>
+                  </div>
+                  {pinterestLoading && <Loader2 className="w-4 h-4 animate-spin ml-auto" />}
+                </Button>
+
+                {/* Continue */}
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={async () => { await updateOnboardingStep(2); setStep('closet'); }}>
+                    Skip
+                  </Button>
+                  <Button className="flex-1" disabled={inspoFiles.length === 0 || inspoUploading} onClick={handleUploadInspoAndContinue}>
+                    {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* CLOSET */}
+            {step === 'closet' && (
+              <motion.div key="closet" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <button onClick={() => setStep('inspiration')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Upload Your Closet</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Snap photos of your clothes — AI handles the rest</p>
+                </div>
+                <label className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/40 transition-colors">
+                    <ShirtIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm font-medium text-foreground">Tap to upload</p>
+                    <p className="text-xs text-muted-foreground mt-1">One item per photo · Up to 50</p>
+                  </div>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
+                </label>
+                {closetPreviews.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-muted-foreground">{closetPreviews.length} items</p>
+                      <label className="text-xs text-primary cursor-pointer hover:underline">
+                        Add more <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
+                      {closetPreviews.map((url, i) => (
+                        <div key={i} className="aspect-square rounded-lg overflow-hidden relative group">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-foreground/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => { setClosetFiles(prev => prev.filter((_, idx) => idx !== i)); setClosetPreviews(prev => prev.filter((_, idx) => idx !== i)); }}>
+                            <X className="w-2.5 h-2.5 text-background" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <Button className="w-full" size="lg" disabled={closetFiles.length === 0} onClick={handleAnalyzeCloset}>
                   <Sparkles className="w-4 h-4 mr-2" /> Analyze with AI
                 </Button>
               </motion.div>
@@ -365,7 +417,6 @@ const Onboarding = () => {
                   <h2 className="font-display text-xl font-bold text-foreground">Review Items</h2>
                   <span className="text-xs text-muted-foreground">{reviewIndex + 1} / {reviewableItems.length}</span>
                 </div>
-
                 <div className="rounded-lg overflow-hidden border border-border bg-card">
                   <div className="aspect-[3/4] max-h-64 bg-muted">
                     <img src={currentReviewItem.imageUrl || currentReviewItem.preview} alt={currentReviewItem.name} className="w-full h-full object-cover" />
@@ -419,7 +470,6 @@ const Onboarding = () => {
                     )}
                   </div>
                 </div>
-
                 <div className="flex justify-center gap-1">
                   {reviewableItems.slice(0, 12).map((_, i) => (
                     <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === reviewIndex ? 'bg-primary' : i < reviewIndex ? 'bg-primary/30' : 'bg-border'}`} />
@@ -479,9 +529,6 @@ const Onboarding = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-                <div className="text-center text-xs text-muted-foreground">
-                  📸 {uploadedInspoIds.length} inspiration · 👗 {savedItemIds.length} items · ✨ {matches.length} outfits
                 </div>
                 <Button className="w-full" size="lg" onClick={handleFinish}>
                   Go to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
