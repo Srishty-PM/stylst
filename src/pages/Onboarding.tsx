@@ -13,7 +13,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
 import { Link2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { useAddClosetItem, uploadClosetImage } from '@/hooks/useClosetItems';
 import { usePinterestConnect } from '@/hooks/usePinterest';
 import { supabase } from '@/integrations/supabase/client';
