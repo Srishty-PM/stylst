@@ -393,7 +393,7 @@ const Onboarding = () => {
             {/* CLOSET */}
             {step === 'closet' && (
               <motion.div key="closet" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                <button onClick={() => setStep('pinterest')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setStep('inspiration')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
                 <div>
