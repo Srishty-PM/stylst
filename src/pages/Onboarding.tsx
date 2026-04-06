@@ -45,8 +45,14 @@ const Onboarding = () => {
   const addInspo = useAddInspiration();
   const addClosetItem = useAddClosetItem();
   const { connect: connectPinterest, loading: pinterestLoading } = usePinterestConnect();
+  const { track } = useAnalytics();
+  usePageView('onboarding');
 
-  const [step, setStep] = useState<Step>(profile?.onboarding_step && profile.onboarding_step >= 2 ? 'closet' : 'welcome');
+  const [step, setStepRaw] = useState<Step>(profile?.onboarding_step && profile.onboarding_step >= 2 ? 'closet' : 'welcome');
+  const setStep = (s: Step) => {
+    track('step_completed', { step: s });
+    setStepRaw(s);
+  };
 
   const [inspoFiles, setInspoFiles] = useState<File[]>([]);
   const [inspoPreviews, setInspoPreviews] = useState<string[]>([]);

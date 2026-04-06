@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFreemiumGates } from '@/hooks/useFreemiumGates';
 import UpgradeModal from '@/components/UpgradeModal';
+import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 
 interface AnalyzedItem {
   index: number;
