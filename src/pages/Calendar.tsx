@@ -20,6 +20,7 @@ import { usePageView } from '@/hooks/useAnalytics';
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const Calendar = () => {
+  usePageView('calendar');
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [addSheetOpen, setAddSheetOpen] = useState(false);
