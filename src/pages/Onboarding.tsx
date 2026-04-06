@@ -51,6 +51,7 @@ const Onboarding = () => {
   const [inspoPreviews, setInspoPreviews] = useState<string[]>([]);
   const [inspoUploading, setInspoUploading] = useState(false);
   const [uploadedInspoIds, setUploadedInspoIds] = useState<{ id: string; image_url: string }[]>([]);
+  const [inspoUrl, setInspoUrl] = useState('');
 
   const [closetFiles, setClosetFiles] = useState<File[]>([]);
   const [closetPreviews, setClosetPreviews] = useState<string[]>([]);
