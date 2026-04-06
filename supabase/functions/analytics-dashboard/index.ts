@@ -1,12 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.3/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Verify service role or admin — this endpoint should not be publicly accessible
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -25,26 +28,7 @@ Deno.serve(async (req) => {
     const days = parseInt(url.searchParams.get("days") || "30");
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    // Run all queries in parallel
-    const [
-      uniqueVisitors,
-      uniqueDevices,
-      signups,
-      outfitsCreated,
-      photosUploaded,
-      stepsCompleted,
-      sessionDurations,
-      dailyVisitors,
-    ] = await Promise.all([
-      // Unique visitors (unique user_ids, excluding null)
-      supabase.rpc("exec_sql", { sql: "" }).then(() => null) || null,
-      null, null, null, null, null, null, null,
-    ]);
-
-    // Use direct SQL via the service role client
-    const { data: stats, error } = await supabase.from("analytics_events").select("*", { count: "exact", head: true }).gte("created_at", since);
-
-    // Unique visitors (distinct user_ids)
+    // Unique visitors
     const { data: visitors } = await supabase
       .from("analytics_events")
       .select("user_id")
@@ -64,6 +48,13 @@ Deno.serve(async (req) => {
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("event_type", "signup")
+      .gte("created_at", since);
+
+    // Logins
+    const { count: loginCount } = await supabase
+      .from("analytics_events")
+      .select("*", { count: "exact", head: true })
+      .eq("event_type", "login")
       .gte("created_at", since);
 
     // Outfits created
@@ -87,13 +78,13 @@ Deno.serve(async (req) => {
       .eq("event_type", "step_completed")
       .gte("created_at", since);
 
-    // Average session duration (from session_end events)
+    // Session durations
     const { data: sessions } = await supabase
       .from("analytics_events")
       .select("event_data")
       .eq("event_type", "session_end")
       .gte("created_at", since);
-    
+
     const durations = sessions
       ?.map((s: any) => s.event_data?.duration_seconds)
       .filter((d: any) => typeof d === "number") || [];
@@ -119,6 +110,7 @@ Deno.serve(async (req) => {
       unique_visitors: uniqueUserIds,
       unique_devices: uniqueDeviceCount,
       signups: signupCount || 0,
+      logins: loginCount || 0,
       outfits_created: outfitCount || 0,
       photos_uploaded: photoCount || 0,
       steps_completed: stepCount || 0,
