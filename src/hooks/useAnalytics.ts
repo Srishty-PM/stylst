@@ -55,30 +55,25 @@ if (!sessionStorage.getItem(SESSION_START_KEY)) {
 const sessionStartTime = Date.now();
 window.addEventListener('beforeunload', () => {
   const duration = Math.round((Date.now() - sessionStartTime) / 1000);
-  const body = JSON.stringify({
-    device_id: deviceId,
-    session_id: sessionId,
-    event_type: 'session_end',
-    event_data: { duration_seconds: duration },
-    page_path: window.location.pathname,
-  });
-  // Use sendBeacon for reliable delivery on page close
+  // Use fetch with keepalive for reliable delivery on page close
   const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/analytics_events`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    'Prefer': 'return=minimal',
-  };
-  try {
-    navigator.sendBeacon(
-      url,
-      new Blob([body], { type: 'application/json' })
-    );
-  } catch {
-    // fallback — best effort
-    fetch(url, { method: 'POST', headers, body, keepalive: true }).catch(() => {});
-  }
+  fetch(url, {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify({
+      device_id: deviceId,
+      session_id: sessionId,
+      event_type: 'session_end',
+      event_data: { duration_seconds: duration },
+      page_path: window.location.pathname,
+    }),
+  }).catch(() => {});
 });
 
 export function useAnalytics() {
