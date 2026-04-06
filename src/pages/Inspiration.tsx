@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useInspirations, useDeleteInspiration } from '@/hooks/useInspirations';
 import { toast } from '@/hooks/use-toast';
 import AutoMatchDialog from '@/components/AutoMatchDialog';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const Inspiration = () => {
   const [tab, setTab] = useState('all');
