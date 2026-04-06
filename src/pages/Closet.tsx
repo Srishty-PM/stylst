@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, ShirtIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const statusColors: Record<string, string> = {
   ready: 'bg-success text-success-foreground',
