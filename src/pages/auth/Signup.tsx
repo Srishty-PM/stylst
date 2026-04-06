@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +16,8 @@ const Signup = () => {
   const { signup } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { track } = useAnalytics();
+  usePageView('signup');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +27,7 @@ const Signup = () => {
     if (error) {
       toast({ title: 'Signup failed', description: error, variant: 'destructive' });
     } else {
+      track('signup');
       toast({ title: 'Welcome!', description: 'Your account has been created.' });
     }
   };

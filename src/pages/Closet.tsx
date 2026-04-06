@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, ShirtIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const statusColors: Record<string, string> = {
   ready: 'bg-success text-success-foreground',
@@ -18,6 +19,7 @@ const statusColors: Record<string, string> = {
 const Closet = () => {
   const [category, setCategory] = useState('All');
   const { data: items = [], isLoading } = useClosetItems(category);
+  usePageView('closet');
 
   return (
     <div className="space-y-6">

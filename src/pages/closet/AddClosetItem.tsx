@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFreemiumGates } from '@/hooks/useFreemiumGates';
 import UpgradeModal from '@/components/UpgradeModal';
+import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 
 interface AnalyzedItem {
   index: number;
@@ -39,6 +40,8 @@ const AddClosetItem = () => {
   const addItem = useAddClosetItem();
   const { canAddClosetItem, closetRemaining, closetLimit } = useFreemiumGates();
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const { track } = useAnalytics();
+  usePageView('add_closet_item');
 
   const [step, setStep] = useState<'upload' | 'analyzing' | 'review' | 'saving'>('upload');
   const [items, setItems] = useState<AnalyzedItem[]>([]);
@@ -186,6 +189,7 @@ const AddClosetItem = () => {
           brand: updatedItems[i].brand,
         });
         updatedItems[i] = { ...updatedItems[i], status: 'done', image_url: finalUrl };
+        track('photo_uploaded', { source: 'closet' });
       } catch (err: any) {
         updatedItems[i] = { ...updatedItems[i], status: 'error', error: err.message };
       }

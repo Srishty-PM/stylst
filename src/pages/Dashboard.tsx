@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const Dashboard = () => {
+  usePageView('dashboard');
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 

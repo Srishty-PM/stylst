@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useInspirations, useDeleteInspiration } from '@/hooks/useInspirations';
 import { toast } from '@/hooks/use-toast';
 import AutoMatchDialog from '@/components/AutoMatchDialog';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const Inspiration = () => {
   const [tab, setTab] = useState('all');
@@ -15,6 +16,7 @@ const Inspiration = () => {
   const { data: items = [], isLoading } = useInspirations();
   const deleteInspo = useDeleteInspiration();
   const [autoMatchItem, setAutoMatchItem] = useState<{ id: string; image_url: string } | null>(null);
+  usePageView('inspiration');
 
   const filtered = tab === 'all' ? items :
     tab === 'url' ? items.filter(i => i.source_url) :

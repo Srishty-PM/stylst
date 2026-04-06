@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +17,8 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { track } = useAnalytics();
+  usePageView('login');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +28,7 @@ const Login = () => {
     if (error) {
       toast({ title: 'Login failed', description: error, variant: 'destructive' });
     } else {
+      track('login');
       if (!rememberMe) {
         sessionStorage.setItem('stylst_ephemeral_session', 'true');
         localStorage.setItem('stylst_ephemeral_session', 'true');

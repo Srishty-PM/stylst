@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Plus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const Looks = () => {
   const { data: looks = [], isLoading } = useLooks();
   const { data: closetItems = [] } = useClosetItems();
+  usePageView('looks');
 
   const getItemsForLook = (ids: string[]) =>
     ids.map(id => closetItems.find(x => x.id === id)).filter(Boolean);
