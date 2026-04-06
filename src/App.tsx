@@ -36,7 +36,6 @@ const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/Influ
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
-const Analytics = lazy(() => import("./pages/Analytics"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
 
 const queryClient = new QueryClient({
