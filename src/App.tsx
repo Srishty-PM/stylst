@@ -36,7 +36,6 @@ const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/Influ
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
-const Analytics = lazy(() => import("./pages/Analytics"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
 
 const queryClient = new QueryClient({
@@ -104,7 +103,6 @@ const AppRoutes = () => (
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
-    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/pinterest-callback" element={<ProtectedRoute><PinterestCallback /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
