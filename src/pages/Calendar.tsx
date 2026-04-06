@@ -15,6 +15,7 @@ import { useClosetItems } from '@/hooks/useClosetItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 

@@ -19,6 +19,7 @@ const statusColors: Record<string, string> = {
 const Closet = () => {
   const [category, setCategory] = useState('All');
   const { data: items = [], isLoading } = useClosetItems(category);
+  usePageView('closet');
 
   return (
     <div className="space-y-6">

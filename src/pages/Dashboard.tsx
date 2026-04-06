@@ -13,6 +13,7 @@ import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { usePageView } from '@/hooks/useAnalytics';
 
 const Dashboard = () => {
+  usePageView('dashboard');
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 

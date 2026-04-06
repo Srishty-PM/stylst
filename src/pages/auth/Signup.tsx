@@ -27,6 +27,7 @@ const Signup = () => {
     if (error) {
       toast({ title: 'Signup failed', description: error, variant: 'destructive' });
     } else {
+      track('signup');
       toast({ title: 'Welcome!', description: 'Your account has been created.' });
     }
   };

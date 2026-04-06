@@ -28,6 +28,7 @@ const Login = () => {
     if (error) {
       toast({ title: 'Login failed', description: error, variant: 'destructive' });
     } else {
+      track('login');
       if (!rememberMe) {
         sessionStorage.setItem('stylst_ephemeral_session', 'true');
         localStorage.setItem('stylst_ephemeral_session', 'true');

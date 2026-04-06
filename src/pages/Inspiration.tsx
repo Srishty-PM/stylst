@@ -16,6 +16,7 @@ const Inspiration = () => {
   const { data: items = [], isLoading } = useInspirations();
   const deleteInspo = useDeleteInspiration();
   const [autoMatchItem, setAutoMatchItem] = useState<{ id: string; image_url: string } | null>(null);
+  usePageView('inspiration');
 
   const filtered = tab === 'all' ? items :
     tab === 'url' ? items.filter(i => i.source_url) :
