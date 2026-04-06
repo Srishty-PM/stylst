@@ -40,6 +40,8 @@ const AddClosetItem = () => {
   const addItem = useAddClosetItem();
   const { canAddClosetItem, closetRemaining, closetLimit } = useFreemiumGates();
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const { track } = useAnalytics();
+  usePageView('add_closet_item');
 
   const [step, setStep] = useState<'upload' | 'analyzing' | 'review' | 'saving'>('upload');
   const [items, setItems] = useState<AnalyzedItem[]>([]);
