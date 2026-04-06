@@ -189,6 +189,7 @@ const AddClosetItem = () => {
           brand: updatedItems[i].brand,
         });
         updatedItems[i] = { ...updatedItems[i], status: 'done', image_url: finalUrl };
+        track('photo_uploaded', { source: 'closet' });
       } catch (err: any) {
         updatedItems[i] = { ...updatedItems[i], status: 'error', error: err.message };
       }
