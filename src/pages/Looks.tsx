@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Plus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePageView } from '@/hooks/useAnalytics';
 
 const Looks = () => {
   const { data: looks = [], isLoading } = useLooks();
