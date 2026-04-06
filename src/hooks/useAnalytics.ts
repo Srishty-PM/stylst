@@ -88,14 +88,14 @@ export function useAnalytics() {
     (eventType: EventType, eventData?: Record<string, unknown>) => {
       supabase
         .from('analytics_events')
-        .insert({
-          user_id: user?.id ?? null,
+        .insert([{
+          user_id: user?.id ?? undefined,
           device_id: deviceId,
           session_id: sessionId,
           event_type: eventType,
-          event_data: eventData ?? {},
+          event_data: (eventData ?? {}) as any,
           page_path: window.location.pathname,
-        })
+        }])
         .then(() => {});
     },
     [user?.id]
