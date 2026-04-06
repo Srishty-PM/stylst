@@ -94,6 +94,21 @@ const Onboarding = () => {
     if (ids.length > 0) toast({ title: `${ids.length} inspiration photos added` });
   };
 
+  const handleSaveInspoUrl = async () => {
+    if (!user || !inspoUrl.trim()) return;
+    setInspoUploading(true);
+    try {
+      const result = await addInspo.mutateAsync({ user_id: user.id, image_url: inspoUrl.trim(), source_url: inspoUrl.trim() });
+      setUploadedInspoIds(prev => [...prev, { id: result.id, image_url: inspoUrl.trim() }]);
+      toast({ title: 'Saved!', description: 'Inspiration added from link.' });
+      setInspoUrl('');
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setInspoUploading(false);
+    }
+  };
+
   // Closet handlers
   const handleClosetFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
