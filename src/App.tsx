@@ -103,7 +103,6 @@ const AppRoutes = () => (
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
-    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/pinterest-callback" element={<ProtectedRoute><PinterestCallback /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
