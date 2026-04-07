@@ -7,7 +7,7 @@ import { useScheduledOutfits } from '@/hooks/useScheduledOutfits';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check } from 'lucide-react';
+import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check, Plane } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { usePageView } from '@/hooks/useAnalytics';
@@ -49,6 +49,9 @@ const Dashboard = () => {
     { label: 'Match Outfit', to: '/inspiration', icon: Layers },
     { label: 'Plan Week', to: '/calendar', icon: CalendarDays },
   ];
+
+  // Upcoming trips
+  const hasTrips = false; // Will be dynamic once user has trips
 
   return (
     <div className="space-y-8">
@@ -147,6 +150,24 @@ const Dashboard = () => {
           </Link>
         ))}
       </div>
+
+      {/* Plan a Trip */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <Link to="/trips/new">
+          <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border-primary/20 bg-gradient-to-r from-primary/5 to-accent/10">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                <Plane className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-base font-semibold text-foreground">Plan a Trip</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Get weather-based outfit suggestions & a packing list for your next trip</p>
+              </div>
+              <Button size="sm" variant="outline" className="shrink-0">Start</Button>
+            </CardContent>
+          </Card>
+        </Link>
+      </motion.div>
 
       {/* Recent Looks */}
       <div>
