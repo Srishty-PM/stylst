@@ -34,6 +34,9 @@ const InfluencerStyles = lazy(() => import("@/pages/influencer-styles/Influencer
 const AddInfluencerStyle = lazy(() => import("@/pages/influencer-styles/AddInfluencerStyle"));
 const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/InfluencerStyleDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Trips = lazy(() => import("./pages/trips/Trips"));
+const NewTrip = lazy(() => import("./pages/trips/NewTrip"));
+const TripDetail = lazy(() => import("./pages/trips/TripDetail"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
