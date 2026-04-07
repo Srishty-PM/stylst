@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.style-my-item]
 verify_jwt = false
+
+[functions.trip-planner]
+verify_jwt = false
