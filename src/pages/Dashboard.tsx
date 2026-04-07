@@ -7,7 +7,7 @@ import { useScheduledOutfits } from '@/hooks/useScheduledOutfits';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check } from 'lucide-react';
+import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check, Plane } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { usePageView } from '@/hooks/useAnalytics';
