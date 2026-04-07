@@ -13,6 +13,7 @@ const bottomNavItems = [
 
 const sidebarItems = [
   ...bottomNavItems,
+  { to: '/trips', icon: Plane, label: 'My Trips' },
   { to: '/ai-stylist', icon: Sparkles, label: 'AI Stylist' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
