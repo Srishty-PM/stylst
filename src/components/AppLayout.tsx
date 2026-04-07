@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, ShirtIcon, Layers, Heart, CalendarDays, Sparkles, Settings, LogOut, Plane } from 'lucide-react';
+import { Home, ShirtIcon, Layers, Heart, CalendarDays, Sparkles, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +13,6 @@ const bottomNavItems = [
 
 const sidebarItems = [
   ...bottomNavItems,
-  { to: '/trips', icon: Plane, label: 'My Trips' },
   { to: '/ai-stylist', icon: Sparkles, label: 'AI Stylist' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];

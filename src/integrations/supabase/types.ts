@@ -386,57 +386,6 @@ export type Database = {
           },
         ]
       }
-      trips: {
-        Row: {
-          activities: string[] | null
-          created_at: string
-          destination: string
-          destination_lat: number | null
-          destination_lng: number | null
-          end_date: string
-          id: string
-          packing_list: Json | null
-          start_date: string
-          status: string
-          suggested_looks: Json | null
-          updated_at: string
-          user_id: string
-          weather_summary: Json | null
-        }
-        Insert: {
-          activities?: string[] | null
-          created_at?: string
-          destination: string
-          destination_lat?: number | null
-          destination_lng?: number | null
-          end_date: string
-          id?: string
-          packing_list?: Json | null
-          start_date: string
-          status?: string
-          suggested_looks?: Json | null
-          updated_at?: string
-          user_id: string
-          weather_summary?: Json | null
-        }
-        Update: {
-          activities?: string[] | null
-          created_at?: string
-          destination?: string
-          destination_lat?: number | null
-          destination_lng?: number | null
-          end_date?: string
-          id?: string
-          packing_list?: Json | null
-          start_date?: string
-          status?: string
-          suggested_looks?: Json | null
-          updated_at?: string
-          user_id?: string
-          weather_summary?: Json | null
-        }
-        Relationships: []
-      }
       user_influencer_preferences: {
         Row: {
           created_at: string | null
