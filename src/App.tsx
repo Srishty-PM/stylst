@@ -103,6 +103,9 @@ const AppRoutes = () => (
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/style-my-item" element={<ProtectedRoute><StyleMyItem /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+    <Route path="/trips" element={<ProtectedRoute><Trips /></ProtectedRoute>} />
+    <Route path="/trips/new" element={<ProtectedRoute><NewTrip /></ProtectedRoute>} />
+    <Route path="/trips/:tripId" element={<ProtectedRoute><TripDetail /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
