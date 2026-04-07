@@ -37,6 +37,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
+const StyleMyItem = lazy(() => import("./pages/StyleMyItem"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +98,7 @@ const AppRoutes = () => (
     <Route path="/looks" element={<ProtectedRoute><Looks /></ProtectedRoute>} />
     <Route path="/looks/:lookId" element={<ProtectedRoute><LookDetail /></ProtectedRoute>} />
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
+    <Route path="/style-my-item" element={<ProtectedRoute><StyleMyItem /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />
