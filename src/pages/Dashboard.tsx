@@ -151,6 +151,24 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* Plan a Trip */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <Link to="/trips/new">
+          <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border-primary/20 bg-gradient-to-r from-primary/5 to-accent/10">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                <Plane className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-base font-semibold text-foreground">Plan a Trip</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Get weather-based outfit suggestions & a packing list for your next trip</p>
+              </div>
+              <Button size="sm" variant="outline" className="shrink-0">Start</Button>
+            </CardContent>
+          </Card>
+        </Link>
+      </motion.div>
+
       {/* Recent Looks */}
       <div>
         <div className="flex items-center justify-between mb-4">
