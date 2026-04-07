@@ -37,6 +37,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
+const StyleMyItem = lazy(() => import("./pages/StyleMyItem"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
