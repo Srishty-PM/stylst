@@ -34,6 +34,9 @@ const InfluencerStyles = lazy(() => import("@/pages/influencer-styles/Influencer
 const AddInfluencerStyle = lazy(() => import("@/pages/influencer-styles/AddInfluencerStyle"));
 const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/InfluencerStyleDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Trips = lazy(() => import("./pages/trips/Trips"));
+const NewTrip = lazy(() => import("./pages/trips/NewTrip"));
+const TripDetail = lazy(() => import("./pages/trips/TripDetail"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
@@ -100,6 +103,9 @@ const AppRoutes = () => (
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/style-my-item" element={<ProtectedRoute><StyleMyItem /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+    <Route path="/trips" element={<ProtectedRoute><Trips /></ProtectedRoute>} />
+    <Route path="/trips/new" element={<ProtectedRoute><NewTrip /></ProtectedRoute>} />
+    <Route path="/trips/:tripId" element={<ProtectedRoute><TripDetail /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
