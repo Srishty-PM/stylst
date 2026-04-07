@@ -50,6 +50,9 @@ const Dashboard = () => {
     { label: 'Plan Week', to: '/calendar', icon: CalendarDays },
   ];
 
+  // Upcoming trips
+  const hasTrips = false; // Will be dynamic once user has trips
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
