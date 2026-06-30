@@ -58,7 +58,7 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 h-56 md:h-72 overflow-hidden"
+        className="relative -mx-6 lg:-mx-12 -mt-8 h-56 md:h-72 overflow-hidden"
       >
         <img
           src={heroImage}
