@@ -47,10 +47,17 @@ export const usePinterestBoards = (enabled: boolean) => {
       const res = await supabase.functions.invoke('pinterest-sync', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (res.error) throw res.error;
+      if (res.error) {
+        const msg = (res.data as any)?.error || res.error.message || 'Pinterest error';
+        const code = (res.data as any)?.code;
+        const err: any = new Error(msg);
+        err.code = code;
+        throw err;
+      }
       return res.data.boards as PinterestBoard[];
     },
     enabled: enabled && !!user,
+    retry: false,
   });
 };
 
