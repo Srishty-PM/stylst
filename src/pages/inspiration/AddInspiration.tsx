@@ -24,8 +24,9 @@ const AddInspiration = () => {
 
   const { connect, loading: connectLoading } = usePinterestConnect();
   const pinterestConnected = profile?.pinterest_connected ?? false;
-  const { data: boards, isLoading: boardsLoading } = usePinterestBoards(pinterestConnected);
+  const { data: boards, isLoading: boardsLoading, error: boardsError } = usePinterestBoards(pinterestConnected);
   const { sync, syncing } = useSyncPinterestBoard();
+  const reauthRequired = (boardsError as any)?.code === 'REAUTH_REQUIRED';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -178,7 +179,7 @@ const AddInspiration = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {!pinterestConnected ? (
+          {!pinterestConnected || reauthRequired ? (
             <Button
               variant="outline"
               className="w-full"
@@ -186,7 +187,7 @@ const AddInspiration = () => {
               onClick={handleConnectPinterest}
             >
               {connectLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Connect Pinterest
+              {reauthRequired ? 'Reconnect Pinterest (session expired)' : 'Connect Pinterest'}
             </Button>
           ) : boardsLoading ? (
             <div className="flex items-center justify-center py-4">
