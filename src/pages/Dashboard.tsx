@@ -11,6 +11,7 @@ import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Chec
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { usePageView } from '@/hooks/useAnalytics';
+const heroImage = new URL('@/assets/landing-hero.jpg', import.meta.url).href;
 
 const Dashboard = () => {
   usePageView('dashboard');
@@ -52,6 +53,32 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
+      {/* Hero Banner */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 h-56 md:h-72 overflow-hidden"
+      >
+        <img
+          src={heroImage}
+          alt="Fashion editorial"
+          className="absolute inset-0 w-full h-full object-cover"
+          fetchPriority="high"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-foreground/70" />
+        <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
+          <h2 className="font-display text-4xl md:text-6xl font-light text-primary-foreground leading-[0.9]">
+            From saved<br />
+            <span className="italic font-normal">to Styled.</span>
+          </h2>
+          <p className="mt-4 text-primary-foreground/80 text-xs md:text-sm font-light tracking-wide max-w-md">
+            Sync your boards, digitize your wardrobe, and let Stylst create outfits you can wear today.
+          </p>
+        </div>
+      </motion.section>
+
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-3xl font-bold text-foreground">{greeting}, {firstName}!</h1>
