@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info } from 'lucide-react';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
+import { useAddLook } from '@/hooks/useLooks';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -65,11 +67,14 @@ interface AutoMatchDialogProps {
 const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, autoStart = false }: AutoMatchDialogProps) => {
   const navigate = useNavigate();
   const autoMatch = useAutoMatch();
+  const addLook = useAddLook();
+  const { user } = useAuth();
   const [step, setStep] = useState<'confirm' | 'processing' | 'result'>(autoStart ? 'processing' : 'confirm');
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showScheduleInput, setShowScheduleInput] = useState(false);
   const [result, setResult] = useState<AutoMatchResult | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [savedLookId, setSavedLookId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && autoStart && !hasStarted) {
@@ -83,7 +88,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
     try {
       const res = await autoMatch.mutateAsync({
         inspiration_id: inspirationId,
-        save_look: true,
+        save_look: false,
       });
       setResult(res);
       setStep('result');
@@ -100,7 +105,31 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
       setResult(null);
       setHasStarted(false);
       setShowScheduleInput(false);
+      setSavedLookId(null);
     }, 300);
+  };
+
+  const handleSaveToLooks = async () => {
+    if (!result || !user) return;
+    try {
+      const saved = await addLook.mutateAsync({
+        user_id: user.id,
+        name: result.match_name,
+        closet_item_ids: result.matched_items.map(i => i.id),
+        inspiration_id: inspirationId,
+        occasion: result.occasion || null,
+        season: result.season || null,
+        notes: result.reasoning || null,
+        created_by_ai: true,
+        missing_items: result.missing_items as any,
+      });
+      setSavedLookId(saved.id);
+      toast({ title: '✓ Saved to Looks', description: result.match_name });
+      handleClose();
+      navigate(`/looks/${saved.id}`);
+    } catch (err: any) {
+      toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
+    }
   };
 
   const matchedCount = result?.matched_items?.length || 0;
