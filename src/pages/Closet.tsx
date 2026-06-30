@@ -18,7 +18,9 @@ const statusColors: Record<string, string> = {
 
 const Closet = () => {
   const [category, setCategory] = useState('All');
-  const { data: items = [], isLoading } = useClosetItems(category);
+  const { data: allItems = [], isLoading } = useClosetItems(category);
+  // Only show items that have been AI-cleaned (background removed)
+  const items = allItems.filter((item: any) => !!item.image_url_cleaned);
   usePageView('closet');
 
   return (
@@ -53,8 +55,14 @@ const Closet = () => {
       ) : items.length === 0 ? (
         <div className="text-center py-16">
           <ShirtIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-lg font-medium text-foreground mb-2">Your closet is empty</p>
-          <p className="text-muted-foreground mb-4">Let's add your first item!</p>
+          <p className="text-lg font-medium text-foreground mb-2">
+            {allItems.length === 0 ? 'Your closet is empty' : 'No AI-cleaned items yet'}
+          </p>
+          <p className="text-muted-foreground mb-4">
+            {allItems.length === 0
+              ? "Let's add your first item!"
+              : 'Items appear here once AI finishes cleaning their backgrounds.'}
+          </p>
           <Link to="/closet/add"><Button>Add Item</Button></Link>
         </div>
       ) : (
