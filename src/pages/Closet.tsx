@@ -18,7 +18,9 @@ const statusColors: Record<string, string> = {
 
 const Closet = () => {
   const [category, setCategory] = useState('All');
-  const { data: items = [], isLoading } = useClosetItems(category);
+  const { data: allItems = [], isLoading } = useClosetItems(category);
+  // Only show items that have been AI-cleaned (background removed)
+  const items = allItems.filter((item: any) => !!item.image_url_cleaned);
   usePageView('closet');
 
   return (
@@ -53,8 +55,14 @@ const Closet = () => {
       ) : items.length === 0 ? (
         <div className="text-center py-16">
           <ShirtIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-lg font-medium text-foreground mb-2">Your closet is empty</p>
-          <p className="text-muted-foreground mb-4">Let's add your first item!</p>
+          <p className="text-lg font-medium text-foreground mb-2">
+            {allItems.length === 0 ? 'Your closet is empty' : 'No AI-cleaned items yet'}
+          </p>
+          <p className="text-muted-foreground mb-4">
+            {allItems.length === 0
+              ? "Let's add your first item!"
+              : 'Items appear here once AI finishes cleaning their backgrounds.'}
+          </p>
           <Link to="/closet/add"><Button>Add Item</Button></Link>
         </div>
       ) : (
@@ -64,7 +72,7 @@ const Closet = () => {
               <Link to={`/closet/${item.id}`}>
                 <Card className="overflow-hidden group hover:shadow-md transition-shadow">
                   <div className="aspect-square relative">
-                    <img src={item.image_url_cleaned || item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" loading="lazy" style={{ imageOrientation: 'from-image' }} />
+                    <img src={item.image_url_cleaned} alt={item.name} className="w-full h-full object-contain bg-muted" loading="lazy" style={{ imageOrientation: 'from-image' }} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <p className="text-sm font-medium text-primary-foreground truncate">{item.name}</p>
