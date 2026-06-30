@@ -28,7 +28,8 @@ const Dashboard = () => {
   const { data: scheduledThisWeek } = useScheduledOutfits(todayStr, weekEnd);
   const { data: scheduledToday } = useScheduledOutfits(todayStr, todayStr);
 
-  const closetCount = closetItems?.length ?? 0;
+  // Only count items that have finished AI background-removal — matches what the Closet page displays.
+  const closetCount = closetItems?.filter(i => !!i.image_url_cleaned).length ?? 0;
   const looksCount = looks?.length ?? 0;
   const inspoCount = inspirations?.length ?? 0;
   const scheduledCount = scheduledThisWeek?.length ?? 0;
