@@ -18,7 +18,7 @@ const Dashboard = () => {
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
-  const { data: closetItems } = useClosetItems();
+  const { data: closetItems } = useClosetItems('All');
   const { data: inspirations } = useInspirations();
   const { data: looks } = useLooks();
 
