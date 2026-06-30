@@ -37,6 +37,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +85,8 @@ const AppRoutes = () => (
     <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
     <Route path="/auth/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/auth/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+    <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+    <Route path="/auth/reset-password" element={<ResetPassword />} />
     <Route path="/onboarding" element={<OnboardingRoute />} />
     <Route path="/onboarding/*" element={<OnboardingRoute />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
