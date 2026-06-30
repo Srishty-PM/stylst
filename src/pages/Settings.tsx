@@ -50,41 +50,6 @@ const Settings = () => {
         </CardContent>
       </Card>
 
-      {/* Subscription */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Subscription</CardTitle>
-            <Badge variant="secondary" className="capitalize">{profile?.subscription_tier || 'free'}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {profile?.subscription_tier === 'free' ? (
-            <>
-              <p className="text-sm text-muted-foreground">Upgrade to unlock AI Stylist, unlimited items, and Pinterest sync.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="border-accent/30">
-                  <CardContent className="p-4 text-center">
-                    <p className="font-semibold text-foreground">Premium</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">£9.99<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                    <Button size="sm" className="mt-3 w-full">Upgrade</Button>
-                  </CardContent>
-                </Card>
-                <Card className="border-accent">
-                  <CardContent className="p-4 text-center">
-                    <p className="font-semibold text-foreground">Premium+</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">£14.99<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                    <Button size="sm" className="mt-3 w-full">Upgrade</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          ) : (
-            <Button variant="outline" size="sm">Manage Subscription</Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Integrations */}
       <Card>
         <CardHeader><CardTitle className="text-lg">Integrations</CardTitle></CardHeader>
