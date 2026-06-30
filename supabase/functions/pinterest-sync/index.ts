@@ -33,7 +33,16 @@ async function refreshTokenIfNeeded(
   });
 
   if (!res.ok) {
-    throw new Error(`Token refresh failed: ${await res.text()}`);
+    const errText = await res.text();
+    // If refresh token is expired/invalid, clear credentials so user can reconnect
+    if (res.status === 401 || errText.includes("expired") || errText.includes("invalid")) {
+      await supabaseAdmin.from("oauth_credentials").delete().eq("user_id", userId);
+      await supabaseAdmin.from("profiles").update({ pinterest_connected: false }).eq("id", userId);
+      const err: any = new Error("Pinterest session expired. Please reconnect.");
+      err.code = "REAUTH_REQUIRED";
+      throw err;
+    }
+    throw new Error(`Token refresh failed: ${errText}`);
   }
 
   const tokens = await res.json();
@@ -185,8 +194,9 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("Pinterest sync error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+    const status = (err as any).code === "REAUTH_REQUIRED" ? 401 : 500;
+    return new Response(JSON.stringify({ error: err.message, code: (err as any).code }), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
