@@ -270,11 +270,13 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
             {/* Actions */}
             <div className="px-6 py-5 space-y-2 border-t border-border">
               <div className="flex gap-2">
-                {result.look && (
-                  <Button className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={() => { handleClose(); navigate(`/looks/${result.look!.id}`); }}>
-                    Save to Looks <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                )}
+                <Button
+                  className="flex-1 uppercase tracking-wider text-[12px] font-semibold"
+                  onClick={handleSaveToLooks}
+                  disabled={addLook.isPending || !!savedLookId}
+                >
+                  {savedLookId ? 'Saved' : addLook.isPending ? 'Saving…' : 'Save to Looks'} <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
                 <Button variant="outline" className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={() => setShowScheduleInput(!showScheduleInput)}>
                   <CalendarPlus className="w-4 h-4 mr-1" /> Schedule
                 </Button>
