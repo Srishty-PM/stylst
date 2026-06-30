@@ -247,19 +247,6 @@ const Dashboard = () => {
           </Card>
         )}
       </div>
-
-      {/* Freemium Banner */}
-      {profile?.subscription_tier === 'free' && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Free plan: 20 items, 3 matches/mo</p>
-              <p className="text-xs text-muted-foreground">Upgrade for unlimited everything.</p>
-            </div>
-            <Button size="sm" variant="outline">Upgrade</Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
