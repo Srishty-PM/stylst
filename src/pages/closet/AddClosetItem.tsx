@@ -185,6 +185,7 @@ const AddClosetItem = () => {
           name: updatedItems[i].name,
           category: updatedItems[i].category,
           image_url: finalUrl,
+          image_url_cleaned: finalUrl,
           colors: updatedItems[i].colors,
           brand: updatedItems[i].brand,
         });

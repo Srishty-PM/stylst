@@ -19,8 +19,8 @@ const statusColors: Record<string, string> = {
 const Closet = () => {
   const [category, setCategory] = useState('All');
   const { data: allItems = [], isLoading } = useClosetItems(category);
-  // Only show items that have been AI-cleaned (background removed)
-  const items = allItems.filter((item: any) => !!item.image_url_cleaned);
+  // Show items that have an image (prefer the AI-cleaned version, fall back to the original)
+  const items = allItems.filter((item: any) => !!(item.image_url_cleaned || item.image_url));
   usePageView('closet');
 
   return (
@@ -72,7 +72,7 @@ const Closet = () => {
               <Link to={`/closet/${item.id}`}>
                 <Card className="overflow-hidden group hover:shadow-md transition-shadow">
                   <div className="aspect-square relative">
-                    <img src={item.image_url_cleaned} alt={item.name} className="w-full h-full object-contain bg-muted" loading="lazy" style={{ imageOrientation: 'from-image' }} />
+                    <img src={item.image_url_cleaned || item.image_url} alt={item.name} className="w-full h-full object-contain bg-muted" loading="lazy" style={{ imageOrientation: 'from-image' }} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <p className="text-sm font-medium text-primary-foreground truncate">{item.name}</p>
