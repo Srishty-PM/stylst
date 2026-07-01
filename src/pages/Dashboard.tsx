@@ -7,6 +7,7 @@ import { useScheduledOutfits } from '@/hooks/useScheduledOutfits';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
@@ -18,15 +19,17 @@ const Dashboard = () => {
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
-  const { data: closetItems } = useClosetItems('All');
-  const { data: inspirations } = useInspirations();
-  const { data: looks } = useLooks();
+  const { data: closetItems, isLoading: closetLoading } = useClosetItems('All');
+  const { data: inspirations, isLoading: inspoLoading } = useInspirations();
+  const { data: looks, isLoading: looksLoading } = useLooks();
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
   const weekEnd = format(addDays(today, 7), 'yyyy-MM-dd');
-  const { data: scheduledThisWeek } = useScheduledOutfits(todayStr, weekEnd);
+  const { data: scheduledThisWeek, isLoading: schedLoading } = useScheduledOutfits(todayStr, weekEnd);
   const { data: scheduledToday } = useScheduledOutfits(todayStr, todayStr);
+
+  const isLoading = closetLoading || inspoLoading || looksLoading || schedLoading;
 
   // Count items that have an image — matches what the Closet page displays.
   const closetCount = closetItems?.filter(i => !!(i.image_url_cleaned || i.image_url)).length ?? 0;
@@ -88,7 +91,20 @@ const Dashboard = () => {
 
       {/* Today's Outfit */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        {todayLook ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-4">
+              <Skeleton className="h-3 w-24 mb-3" />
+              <div className="flex gap-3">
+                <Skeleton className="w-20 h-20 rounded shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : todayLook ? (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">Today's Outfit</p>
@@ -150,7 +166,9 @@ const Dashboard = () => {
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
                   <s.icon className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                  {isLoading
+                    ? <Skeleton className="h-8 w-10 mx-auto my-0.5" />
+                    : <p className="text-2xl font-bold text-foreground">{s.value}</p>}
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                   {s.sub && <p className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</p>}
                 </CardContent>

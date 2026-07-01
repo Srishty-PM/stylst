@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, ShirtIcon, Layers, Heart, CalendarDays, Sparkles, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,7 +72,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main content */}
       <main className="lg:pl-60 pb-20 lg:pb-6">
         <div className="max-w-5xl mx-auto px-6 py-8 lg:px-12">
-          {children}
+          <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+            {children}
+          </Suspense>
         </div>
       </main>
 
