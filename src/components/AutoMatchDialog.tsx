@@ -8,6 +8,7 @@ import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info } from 'lucide-react'
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
 import { useAddLook } from '@/hooks/useLooks';
+import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -68,6 +69,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   const navigate = useNavigate();
   const autoMatch = useAutoMatch();
   const addLook = useAddLook();
+  const addSchedule = useAddScheduledOutfit();
   const { user } = useAuth();
   const [step, setStep] = useState<'confirm' | 'processing' | 'result'>(autoStart ? 'processing' : 'confirm');
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -129,6 +131,39 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
       navigate(`/looks/${saved.id}`);
     } catch (err: any) {
       toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleScheduleConfirm = async () => {
+    if (!result || !user) return;
+    try {
+      let lookId = savedLookId;
+      if (!lookId) {
+        const saved = await addLook.mutateAsync({
+          user_id: user.id,
+          name: result.match_name,
+          closet_item_ids: result.matched_items.map(i => i.id),
+          inspiration_id: inspirationId,
+          occasion: result.occasion || null,
+          season: result.season || null,
+          notes: result.reasoning || null,
+          created_by_ai: true,
+          missing_items: result.missing_items as any,
+        });
+        lookId = saved.id;
+        setSavedLookId(saved.id);
+      }
+      await addSchedule.mutateAsync({
+        user_id: user.id,
+        matched_look_id: lookId,
+        scheduled_date: scheduledDate,
+        event_name: result.match_name,
+      });
+      toast({ title: '📅 Scheduled!', description: `Planned for ${format(new Date(scheduledDate + 'T00:00:00'), 'MMMM d')}` });
+      handleClose();
+      navigate('/calendar');
+    } catch (err: any) {
+      toast({ title: 'Schedule failed', description: err.message, variant: 'destructive' });
     }
   };
 
@@ -259,8 +294,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
                   <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Schedule for</Label>
                   <div className="flex gap-2">
                     <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} min={format(new Date(), 'yyyy-MM-dd')} className="flex-1" />
-                    <Button size="sm" onClick={() => { toast({ title: '📅 Scheduled!', description: `Planned for ${format(new Date(scheduledDate + 'T00:00:00'), 'MMMM d')}` }); handleClose(); navigate('/looks'); }}>
-                      Confirm
+                    <Button size="sm" onClick={handleScheduleConfirm} disabled={addLook.isPending || addSchedule.isPending}>
+                      {(addLook.isPending || addSchedule.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                     </Button>
                   </div>
                 </motion.div>

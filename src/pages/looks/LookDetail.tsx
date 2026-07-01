@@ -145,8 +145,21 @@ const LookDetail = () => {
     await toggleFav.mutateAsync({ id: look.id, is_favorite: !look.is_favorite });
   };
 
-  const handleWearToday = () => {
-    toast({ title: '👗 Marked as worn!', description: `${look.name} — looking great today!` });
+  const handleWearToday = async () => {
+    if (!user) return;
+    try {
+      await addSchedule.mutateAsync({
+        user_id: user.id,
+        matched_look_id: look.id,
+        scheduled_date: format(new Date(), 'yyyy-MM-dd'),
+        event_name: look.name,
+        was_worn: true,
+        worn_at: new Date().toISOString(),
+      });
+      toast({ title: '👗 Marked as worn!', description: `${look.name} — looking great today!` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
   };
 
   const handleSchedule = async () => {
@@ -264,8 +277,8 @@ const LookDetail = () => {
       {/* Actions */}
       <div className="px-4 mt-6 space-y-3">
         <div className="flex gap-2">
-          <Button className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={handleWearToday}>
-            Wear Today
+          <Button className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={handleWearToday} disabled={addSchedule.isPending}>
+            {addSchedule.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Wear Today'}
           </Button>
           <Button variant="outline" className="flex-1 uppercase tracking-wider text-[12px] font-semibold" onClick={() => setShowSchedule(true)}>
             <CalendarPlus className="w-4 h-4 mr-1" /> Schedule
