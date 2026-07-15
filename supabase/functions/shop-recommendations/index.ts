@@ -7,6 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GEMINI_TEXT_MODEL = "gemini-3.5-flash";
+const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -36,8 +39,8 @@ serve(async (req) => {
     const { item_name, item_category, item_description } = await req.json();
     if (!item_name) throw new Error("item_name is required");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     const prompt = `You are a fashion shopping assistant. A user needs to buy a clothing item with these details:
 - Name: ${item_name}
@@ -46,14 +49,14 @@ ${item_description ? `- Description: ${item_description}` : ""}
 
 Generate exactly 6 product recommendations that match this item. For each product, provide realistic details.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: GEMINI_TEXT_MODEL,
         messages: [
           { role: "system", content: "You are a fashion shopping expert. Return structured product recommendations." },
           { role: "user", content: prompt },
