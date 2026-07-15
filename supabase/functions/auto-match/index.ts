@@ -6,12 +6,51 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GEMINI_VISION_MODEL = "gemini-2.5-flash";
+const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const MAX_IMAGE_PAYLOAD_BYTES = 12_000_000;
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function fetchImageDataUrl(url: string): Promise<{ dataUrl: string; bytes: number } | null> {
+  const candidates: string[] = [];
+  if (url.includes("/storage/v1/object/public/")) {
+    candidates.push(
+      url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
+        (url.includes("?") ? "&" : "?") + "width=512&quality=70"
+    );
+  }
+  candidates.push(url);
+
+  for (const candidate of candidates) {
+    try {
+      const res = await fetch(candidate);
+      if (!res.ok) continue;
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.startsWith("image/")) continue;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.length === 0) continue;
+      return { dataUrl: `data:${contentType};base64,${bytesToBase64(bytes)}`, bytes: bytes.length };
+    } catch (_) {
+      continue;
+    }
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
@@ -56,20 +95,29 @@ serve(async (req) => {
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    // Build multimodal content: inspiration image + closet item images for visual comparison
-    const userContent: any[] = [
-      { type: "image_url", image_url: { url: inspiration.image_url } },
-      { type: "text", text: "⬆️ INSPIRATION IMAGE — analyze this outfit.\n\n⬇️ Below are photos of EVERY item in the user's closet. Use BOTH the images AND the text list to match." },
-    ];
+    // Build multimodal content: inspiration image + closet item images for visual comparison.
+    // Gemini requires inline base64 (it does not fetch public URLs) with a 20MB request cap,
+    // so images are downscaled via Supabase image transform and budgeted.
+    const userContent: any[] = [];
+    let payloadBytes = 0;
 
-    // Include closet item images (up to 30 to stay within context limits)
+    const inspoImg = await fetchImageDataUrl(inspiration.image_url);
+    if (inspoImg) {
+      userContent.push({ type: "image_url", image_url: { url: inspoImg.dataUrl } });
+      payloadBytes += inspoImg.bytes;
+    }
+    userContent.push({ type: "text", text: "⬆️ INSPIRATION IMAGE — analyze this outfit.\n\n⬇️ Below are photos of items in the user's closet. Use BOTH the images AND the text list to match." });
+
+    // Include closet item images (up to 30, within the payload budget)
     const itemsToShow = items.slice(0, 30);
     for (const item of itemsToShow) {
       const imgUrl = item.image_url_cleaned || item.image_url;
-      if (imgUrl) {
-        userContent.push({ type: "image_url", image_url: { url: imgUrl } });
-        userContent.push({ type: "text", text: `↑ Closet item id:"${item.id}" — ${item.name} (${item.category})` });
-      }
+      if (!imgUrl || payloadBytes >= MAX_IMAGE_PAYLOAD_BYTES) continue;
+      const img = await fetchImageDataUrl(imgUrl);
+      if (!img) continue;
+      payloadBytes += img.bytes;
+      userContent.push({ type: "image_url", image_url: { url: img.dataUrl } });
+      userContent.push({ type: "text", text: `↑ Closet item id:"${item.id}" — ${item.name} (${item.category})` });
     }
 
     userContent.push({
@@ -106,14 +154,14 @@ CRITICAL: It's better to over-match (use a similar item) than to mark something 
       { role: "user", content: userContent },
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: GEMINI_VISION_MODEL,
         messages,
         tools: [
           {
@@ -163,13 +211,8 @@ CRITICAL: It's better to over-match (use a similar item) than to mark something 
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Gemini error:", response.status, t);
       return new Response(JSON.stringify({ error: "AI service unavailable" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

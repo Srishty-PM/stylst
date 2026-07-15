@@ -7,6 +7,36 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function detectMime(bytes: Uint8Array): string {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50) return "image/png";
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8) return "image/jpeg";
+  return "image/jpeg";
+}
+
+function extractInlineImage(data: any): string | null {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return null;
+  for (const part of parts) {
+    const inline = part?.inlineData || part?.inline_data;
+    if (inline?.data) {
+      const mime = inline.mimeType || inline.mime_type || "image/png";
+      return `data:${mime};base64,${inline.data}`;
+    }
+  }
+  return null;
+}
+
 /** Read width & height from PNG IHDR chunk (bytes 16-23) or JPEG SOF marker */
 function getImageDimensions(bytes: Uint8Array): { width: number; height: number } | null {
   // PNG: bytes 0-7 = signature, 8-15 = IHDR length+type, 16-19 = width, 20-23 = height
@@ -46,42 +76,41 @@ async function fetchImageBytes(url: string): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
-async function callAICleanup(apiKey: string, imageUrl: string, orientationHint: string): Promise<string | null> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Remove the background from this clothing item image. Make the background pure white (#FFFFFF). CRITICAL RULES: The output image MUST be in ${orientationHint} orientation. Do NOT rotate, flip, or change the aspect ratio. Do NOT make a square image. Keep the exact same proportions. Center the clothing item. Professional product photo style.`,
-            },
-            {
-              type: "image_url",
-              image_url: { url: imageUrl },
-            },
-          ],
-        },
-      ],
-      modalities: ["image", "text"],
-    }),
-  });
+async function callAICleanup(apiKey: string, imageBytes: Uint8Array, mimeType: string, orientationHint: string): Promise<string | null> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `Remove the background from this clothing item image. Make the background pure white (#FFFFFF). CRITICAL RULES: The output image MUST be in ${orientationHint} orientation. Do NOT rotate, flip, or change the aspect ratio. Do NOT make a square image. Keep the exact same proportions. Center the clothing item. Professional product photo style.`,
+              },
+              {
+                inline_data: { mime_type: mimeType, data: bytesToBase64(imageBytes) },
+              },
+            ],
+          },
+        ],
+        generationConfig: { responseModalities: ["IMAGE"] },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error("AI image error:", response.status, errText);
+    console.error("Gemini image error:", response.status, errText);
     return null;
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
+  return extractInlineImage(data);
 }
 
 function base64ToBytes(b64: string): Uint8Array {
@@ -128,11 +157,12 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     // Fetch original image to detect orientation
     const originalBytes = await fetchImageBytes(image_url);
+    const mimeType = detectMime(originalBytes);
     const originalDims = getImageDimensions(originalBytes);
     const originalIsPortrait = originalDims ? isPortrait(originalDims) : true; // default to portrait for clothing
     const orientationHint = originalIsPortrait ? "PORTRAIT (taller than wide)" : "LANDSCAPE (wider than tall)";
@@ -140,7 +170,7 @@ serve(async (req) => {
     console.log("Original dimensions:", originalDims, "isPortrait:", originalIsPortrait);
 
     // First attempt
-    let imageData = await callAICleanup(LOVABLE_API_KEY, image_url, orientationHint);
+    let imageData = await callAICleanup(GEMINI_API_KEY, originalBytes, mimeType, orientationHint);
 
     if (!imageData) {
       return new Response(JSON.stringify({ cleaned_url: image_url, cleaned: false }), {
@@ -160,8 +190,9 @@ serve(async (req) => {
         console.log("Orientation mismatch detected! Retrying...");
         // Retry with stronger hint
         const retryData = await callAICleanup(
-          LOVABLE_API_KEY,
-          image_url,
+          GEMINI_API_KEY,
+          originalBytes,
+          mimeType,
           originalIsPortrait
             ? "PORTRAIT (vertical, height MUST be greater than width)"
             : "LANDSCAPE (horizontal, width MUST be greater than height)"

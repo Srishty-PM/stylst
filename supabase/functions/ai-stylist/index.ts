@@ -6,12 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
+const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
@@ -74,14 +77,14 @@ Based on the user's request, suggest 1-3 outfit combinations using ONLY items fr
 
 If the closet doesn't have enough items for the request, say so honestly and suggest what items they could add. Be enthusiastic but genuine.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: GEMINI_TEXT_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
@@ -97,14 +100,8 @@ If the closet doesn't have enough items for the request, say so honestly and sug
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits in workspace settings." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Gemini error:", response.status, t);
       return new Response(JSON.stringify({ error: "AI service unavailable" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

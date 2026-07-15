@@ -9,6 +9,22 @@ const corsHeaders = {
 
 const CATEGORIES = ["tops", "bottoms", "outerwear", "dresses", "shoes", "accessories"];
 
+const GEMINI_VISION_MODEL = "gemini-2.5-flash";
+const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+async function urlToDataUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch image (${res.status})`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const contentType = res.headers.get("content-type") || "image/jpeg";
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return `data:${contentType};base64,${btoa(binary)}`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -43,20 +59,21 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     const results = await Promise.all(
       image_urls.map(async (url: string, index: number) => {
         try {
-          const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          const imageDataUrl = await urlToDataUrl(url);
+          const response = await fetch(GEMINI_OPENAI_URL, {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              Authorization: `Bearer ${GEMINI_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
+              model: GEMINI_VISION_MODEL,
               messages: [
                 {
                   role: "user",
@@ -75,7 +92,7 @@ Return ONLY valid JSON, no markdown.`,
                     },
                     {
                       type: "image_url",
-                      image_url: { url },
+                      image_url: { url: imageDataUrl },
                     },
                   ],
                 },
