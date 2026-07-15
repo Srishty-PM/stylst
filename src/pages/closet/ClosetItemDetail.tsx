@@ -3,10 +3,8 @@ import { useClosetItem, useDeleteClosetItem, useUpdateClosetItem } from '@/hooks
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Check, Trash2, Loader2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Check, Trash2, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import ShoppingSheet from '@/components/ShoppingSheet';
 
 const statusColors: Record<string, string> = {
   ready: 'bg-success text-success-foreground',
@@ -21,7 +19,6 @@ const ClosetItemDetail = () => {
   const { data: item, isLoading } = useClosetItem(itemId);
   const deleteItem = useDeleteClosetItem();
   const updateItem = useUpdateClosetItem();
-  const [shopOpen, setShopOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -103,21 +100,8 @@ const ClosetItemDetail = () => {
             </Button>
           </div>
 
-          <Button variant="outline" className="w-full gap-2" onClick={() => setShopOpen(true)}>
-            <ShoppingBag className="w-4 h-4" /> Shop similar
-          </Button>
         </CardContent>
       </Card>
-
-      <ShoppingSheet
-        open={shopOpen}
-        onOpenChange={setShopOpen}
-        item={{
-          name: item.name,
-          category: item.category,
-          thumbnail_url: item.image_url_cleaned || item.image_url,
-        }}
-      />
     </div>
   );
 };

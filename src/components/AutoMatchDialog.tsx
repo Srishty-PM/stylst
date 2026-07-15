@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info } from 'lucide-react';
+import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info, ShoppingBag } from 'lucide-react';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
 import { useAddLook } from '@/hooks/useLooks';
@@ -15,8 +15,9 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MissingItem } from '@/hooks/useAutoMatch';
+import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
 
-const MissingItemsCollage = ({ items }: { items: MissingItem[] }) => {
+const MissingItemsCollage = ({ items, onShop }: { items: MissingItem[]; onShop: (item: ShopMissingItem) => void }) => {
   const thumbnails = useMissingThumbnails(items);
   if (!items.length) return null;
 
@@ -27,12 +28,14 @@ const MissingItemsCollage = ({ items }: { items: MissingItem[] }) => {
           const thumb = thumbnails[i];
           const isLarge = i < 2;
           return (
-            <motion.div
+            <motion.button
               key={i}
+              type="button"
+              onClick={() => onShop({ ...item, thumbnail_url: thumb || null })}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className={`bg-card rounded-sm overflow-hidden border border-border flex flex-col items-center justify-center ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
+              className={`relative group bg-card rounded-sm overflow-hidden border border-border flex flex-col items-center justify-center text-left transition-transform active:scale-[0.98] ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
             >
               {thumb ? (
                 <img src={thumb} alt={item.name} className="w-full h-full object-contain p-2" />
@@ -46,12 +49,16 @@ const MissingItemsCollage = ({ items }: { items: MissingItem[] }) => {
                   </div>
                 </div>
               )}
-            </motion.div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent px-2 pt-6 pb-1.5 flex items-center justify-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-white" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-white">Shop</span>
+              </div>
+            </motion.button>
           );
         })}
       </div>
       <p className="text-sm text-muted-foreground mt-5 flex items-center gap-1.5">
-        {items.length} item{items.length > 1 ? 's' : ''} needed <Info className="w-3.5 h-3.5" />
+        tap any item to shop it <Info className="w-3.5 h-3.5" />
       </p>
     </div>
   );
@@ -77,6 +84,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   const [result, setResult] = useState<AutoMatchResult | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [savedLookId, setSavedLookId] = useState<string | null>(null);
+  const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
 
   useEffect(() => {
     if (open && autoStart && !hasStarted) {
@@ -172,6 +180,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   const totalCount = matchedCount + missingCount;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg p-0 overflow-hidden gap-0 border-border bg-background">
         {/* Confirm */}
@@ -277,7 +286,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
               {/* Missing items collage */}
               {missingCount > 0 && (
                 <TabsContent value="missing" className="mt-0">
-                  <MissingItemsCollage items={result.missing_items} />
+                  <MissingItemsCollage items={result.missing_items} onShop={setShopItem} />
                 </TabsContent>
               )}
             </Tabs>
@@ -324,6 +333,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
         )}
       </DialogContent>
     </Dialog>
+    <ShoppingSheet open={!!shopItem} onOpenChange={(o) => { if (!o) setShopItem(null); }} item={shopItem} />
+    </>
   );
 };
 

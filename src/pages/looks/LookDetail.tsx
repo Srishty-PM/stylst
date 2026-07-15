@@ -16,12 +16,13 @@ import {
 } from '@/components/ui/dialog';
 import {
   ArrowLeft, CalendarPlus, Heart, Trash2, Loader2,
-  Sparkles, ImageIcon, Info,
+  Sparkles, ImageIcon, Info, ShoppingBag,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import type { MissingItem } from '@/hooks/useAutoMatch';
+import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
 
 /* ── Collage grid for items ─────────────────────────── */
 const ItemCollage = ({ items, linkPrefix }: { items: { id: string; name: string; image_url: string; image_url_cleaned?: string | null }[]; linkPrefix?: string }) => (
@@ -47,8 +48,8 @@ const ItemCollage = ({ items, linkPrefix }: { items: { id: string; name: string;
   </div>
 );
 
-/* ── Missing items collage with lazy thumbnails ─────── */
-const MissingCollage = ({ items }: { items: MissingItem[] }) => {
+/* ── Missing items collage with lazy thumbnails + shop ─── */
+const MissingCollage = ({ items, onShop }: { items: MissingItem[]; onShop: (item: ShopMissingItem) => void }) => {
   const thumbnails = useMissingThumbnails(items);
   if (!items.length) return null;
 
@@ -59,12 +60,14 @@ const MissingCollage = ({ items }: { items: MissingItem[] }) => {
           const thumb = thumbnails[i];
           const isLarge = i < 2;
           return (
-            <motion.div
+            <motion.button
               key={i}
+              type="button"
+              onClick={() => onShop({ ...item, thumbnail_url: thumb || null })}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className={`bg-card rounded-sm overflow-hidden border border-border flex items-center justify-center ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
+              className={`relative group bg-card rounded-sm overflow-hidden border border-border flex items-center justify-center text-left transition-transform active:scale-[0.98] ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
             >
               {thumb ? (
                 <img src={thumb} alt={item.name} className="w-full h-full object-contain p-2" />
@@ -76,12 +79,16 @@ const MissingCollage = ({ items }: { items: MissingItem[] }) => {
                   <p className="text-[10px] text-muted-foreground font-medium truncate max-w-[100px]">{item.name}</p>
                 </div>
               )}
-            </motion.div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent px-2 pt-6 pb-1.5 flex items-center justify-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-white" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-white">Shop</span>
+              </div>
+            </motion.button>
           );
         })}
       </div>
       <p className="text-sm text-muted-foreground mt-5 flex items-center gap-1.5">
-        {items.length} item{items.length > 1 ? 's' : ''} needed <Info className="w-3.5 h-3.5" />
+        tap any item to shop it <Info className="w-3.5 h-3.5" />
       </p>
     </div>
   );
@@ -100,6 +107,7 @@ const LookDetail = () => {
 
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
 
   const { data: inspiration } = useQuery({
     queryKey: ['inspiration', look?.inspiration_id],
@@ -246,7 +254,7 @@ const LookDetail = () => {
           {/* Missing items collage */}
           {missingItems.length > 0 && (
             <TabsContent value="missing" className="mt-0">
-              <MissingCollage items={missingItems} />
+              <MissingCollage items={missingItems} onShop={setShopItem} />
             </TabsContent>
           )}
 
@@ -316,6 +324,8 @@ const LookDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ShoppingSheet open={!!shopItem} onOpenChange={(o) => { if (!o) setShopItem(null); }} item={shopItem} />
     </div>
   );
 };

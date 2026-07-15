@@ -22,6 +22,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import ItemSwapSheet from '@/components/ItemSwapSheet';
 import type { MissingItem } from '@/hooks/useAutoMatch';
+import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
 
 const categoryIcon = (category: string) => {
   const c = category?.toLowerCase() || '';
@@ -51,6 +52,7 @@ const InspirationDetail = () => {
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [savedLookId, setSavedLookId] = useState<string | null>(null);
+  const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
 
   const handleAnalyze = async () => {
     if (!inspirationId) return;
@@ -243,7 +245,12 @@ const InspirationDetail = () => {
                       const Icon = categoryIcon(mi.category);
                       const thumb = thumbnails[i];
                       return (
-                        <div key={i} className="flex items-center gap-3 py-2.5">
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setShopItem({ ...mi, thumbnail_url: thumb || null })}
+                          className="w-full flex items-center gap-3 py-2.5 text-left transition-colors hover:bg-muted/40 rounded-sm px-1 -mx-1"
+                        >
                           <div className="w-14 h-14 rounded-sm bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border">
                             {thumb ? (
                               <img src={thumb} alt={mi.name} className="w-full h-full object-contain" />
@@ -255,7 +262,11 @@ const InspirationDetail = () => {
                             <p className="text-sm font-medium text-foreground truncate">{mi.name}</p>
                             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{mi.category}</p>
                           </div>
-                        </div>
+                          <div className="flex items-center gap-1 text-primary shrink-0 pr-1">
+                            <BagIcon className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">Shop</span>
+                          </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -387,6 +398,8 @@ const InspirationDetail = () => {
           }
         }}
       />
+
+      <ShoppingSheet open={!!shopItem} onOpenChange={(o) => { if (!o) setShopItem(null); }} item={shopItem} />
     </div>
   );
 };
