@@ -8,6 +8,7 @@ import { useState, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
+import { supabase } from '@/integrations/supabase/client';
 
 const SUGGESTIONS = [
   "Create a casual weekend outfit",
@@ -34,13 +35,15 @@ const AIStylist = () => {
     abortRef.current = new AbortController();
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-stylist`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({ prompt: text }),
           signal: abortRef.current.signal,
