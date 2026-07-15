@@ -20,11 +20,11 @@ const PRICE_MAX = 500;
 const DEFAULT_RANGE: [number, number] = [0, 200];
 
 function googleShoppingUrl(query: string, [min, max]: [number, number]): string {
-  const priceParts = ['mr:1', 'price:1'];
-  if (min > PRICE_MIN) priceParts.push(`ppr_min:${min}`);
-  if (max < PRICE_MAX) priceParts.push(`ppr_max:${max}`);
-  const tbs = priceParts.join(',');
-  return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}&tbs=${encodeURIComponent(tbs)}`;
+  let q = query;
+  if (max < PRICE_MAX) q += ` under £${max}`;
+  else if (min > PRICE_MIN) q += ` over £${min}`;
+  const params = new URLSearchParams({ q, udm: '28', gl: 'uk', hl: 'en-GB' });
+  return `https://www.google.com/search?${params.toString()}`;
 }
 
 const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
