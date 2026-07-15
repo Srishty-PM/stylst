@@ -36,6 +36,7 @@ const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/Influ
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 const PinterestCallback = lazy(() => import("./pages/PinterestCallback"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
@@ -108,6 +109,7 @@ const AppRoutes = () => (
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
     <Route path="/privacy" element={<Privacy />} />
+    <Route path="/terms" element={<Terms />} />
     <Route path="/pinterest-callback" element={<ProtectedRoute><PinterestCallback /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

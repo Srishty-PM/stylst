@@ -11,11 +11,26 @@ import { LogOut, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePinterestConnect } from '@/hooks/usePinterest';
 import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 const Settings = () => {
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
   const { connect, loading: pinterestLoading } = usePinterestConnect();
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -28,6 +43,20 @@ const Settings = () => {
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+    } catch (err: any) {
+      setDeleting(false);
+      toast({ title: 'Error', description: err.message || 'Could not delete account.', variant: 'destructive' });
+      return;
+    }
+    await logout().catch(() => {});
+    navigate('/');
   };
 
   return (
@@ -119,12 +148,35 @@ const Settings = () => {
           <Button variant="outline" className="w-full" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" /> Log Out
           </Button>
-          <Button variant="ghost" className="w-full text-destructive">Delete Account</Button>
+          <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full text-destructive">Delete Account</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes your account and all your data, your closet, inspiration, looks, and schedule. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleting}
+                  onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+                  {deleting ? 'Deleting...' : 'Delete Account'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 
       <p className="text-xs text-center text-muted-foreground">
-        Stylst v1.0.0 · Terms · <a href="/privacy" className="underline hover:text-foreground">Privacy</a>
+        Stylst v1.0.0 · <a href="/terms" className="underline hover:text-foreground">Terms</a> · <a href="/privacy" className="underline hover:text-foreground">Privacy</a>
       </p>
     </div>
   );

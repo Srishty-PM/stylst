@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export type MatchedLook = Tables<'matched_looks'>;
 export type MatchedLookInsert = TablesInsert<'matched_looks'>;
@@ -41,6 +42,7 @@ export const useLook = (lookId: string | undefined) => {
 
 export const useAddLook = () => {
   const queryClient = useQueryClient();
+  const { track } = useAnalytics();
   return useMutation({
     mutationFn: async (look: MatchedLookInsert) => {
       const { data, error } = await supabase
@@ -53,6 +55,7 @@ export const useAddLook = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['looks'] });
+      track('outfit_created');
     },
   });
 };

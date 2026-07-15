@@ -68,14 +68,14 @@ const Inspiration = () => {
           <Link to="/inspiration/add"><Button>Add Inspiration</Button></Link>
         </div>
       ) : (
-        <div className="columns-2 md:columns-3 gap-3 space-y-3">
+        <div className="columns-2 md:columns-3 gap-3">
           {filtered.map((item, i) => (
-            <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
+            <motion.div key={item.id} className="break-inside-avoid mb-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i, 8) * 0.05 }}>
               <div
-                className="relative rounded-sm overflow-hidden group break-inside-avoid cursor-pointer"
+                className="relative rounded-sm overflow-hidden group cursor-pointer"
                 onClick={(e) => handleMatch(e, { id: item.id, image_url: item.image_url })}
               >
-                <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="w-full object-cover" loading="lazy" />
+                <img src={item.image_url} alt={item.description || 'Fashion inspiration'} className="block w-full h-auto" loading="lazy" />
 
                 {/* Always-visible Match button - bottom overlay */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 pt-10">

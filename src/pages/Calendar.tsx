@@ -192,7 +192,7 @@ const Calendar = () => {
             <div
               key={day.toISOString()}
               onClick={() => handleDayClick(day)}
-              className="border-t border-border min-h-[90px] flex flex-col items-center py-1 cursor-pointer hover:bg-muted/30 transition-colors relative"
+              className="border-t border-border min-h-[90px] flex flex-col items-center py-1 cursor-pointer hover:bg-muted/30 transition-colors relative overflow-hidden"
             >
               {/* Date number */}
               <div className={`w-7 h-7 flex items-center justify-center text-sm z-10 ${
@@ -209,7 +209,7 @@ const Calendar = () => {
                   <img
                     src={thumbUrl}
                     alt="Outfit"
-                    className="max-h-[52px] w-auto object-contain rounded-sm"
+                    className="max-h-[52px] max-w-full w-auto object-contain rounded-sm"
                     loading="lazy"
                   />
                   {dayOutfits.length > 1 && (
