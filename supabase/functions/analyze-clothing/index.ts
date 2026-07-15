@@ -12,6 +12,16 @@ const CATEGORIES = ["tops", "bottoms", "outerwear", "dresses", "shoes", "accesso
 const GEMINI_VISION_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 async function urlToDataUrl(url: string): Promise<string> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch image (${res.status})`);
@@ -66,7 +76,7 @@ serve(async (req) => {
       image_urls.map(async (url: string, index: number) => {
         try {
           const imageDataUrl = await urlToDataUrl(url);
-          const response = await fetch(GEMINI_OPENAI_URL, {
+          const response = await fetchWithRetry(GEMINI_OPENAI_URL, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${GEMINI_API_KEY}`,

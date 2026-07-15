@@ -9,6 +9,16 @@ const corsHeaders = {
 
 const GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image";
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunk = 0x8000;
@@ -77,7 +87,7 @@ async function fetchImageBytes(url: string): Promise<Uint8Array> {
 }
 
 async function callAICleanup(apiKey: string, imageBytes: Uint8Array, mimeType: string, orientationHint: string): Promise<string | null> {
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
     {
       method: "POST",

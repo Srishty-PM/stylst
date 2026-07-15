@@ -9,6 +9,16 @@ const corsHeaders = {
 
 const GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image";
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 function extractInlineImage(data: any): string | null {
   const parts = data?.candidates?.[0]?.content?.parts;
   if (!Array.isArray(parts)) return null;
@@ -56,7 +66,7 @@ serve(async (req) => {
 
     const prompt = `Generate a clean, minimal product photo of a "${item_name}" (${category || "clothing"}) on a plain white background. Fashion e-commerce style, no model, just the item flat-lay or on invisible mannequin. Simple, elegant, high quality.`;
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
       {
         method: "POST",

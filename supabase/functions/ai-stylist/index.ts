@@ -9,6 +9,16 @@ const corsHeaders = {
 const GEMINI_TEXT_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -77,7 +87,7 @@ Based on the user's request, suggest 1-3 outfit combinations using ONLY items fr
 
 If the closet doesn't have enough items for the request, say so honestly and suggest what items they could add. Be enthusiastic but genuine.`;
 
-    const response = await fetch(GEMINI_OPENAI_URL, {
+    const response = await fetchWithRetry(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GEMINI_API_KEY}`,

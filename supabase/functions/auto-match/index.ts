@@ -10,6 +10,16 @@ const GEMINI_VISION_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const MAX_IMAGE_PAYLOAD_BYTES = 12_000_000;
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunk = 0x8000;
@@ -154,7 +164,7 @@ CRITICAL: It's better to over-match (use a similar item) than to mark something 
       { role: "user", content: userContent },
     ];
 
-    const response = await fetch(GEMINI_OPENAI_URL, {
+    const response = await fetchWithRetry(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GEMINI_API_KEY}`,

@@ -9,6 +9,16 @@ const corsHeaders = {
 const GEMINI_TEXT_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+  let res: Response | undefined;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, options);
+    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return res!;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -72,7 +82,7 @@ Return ONLY valid JSON in this exact format:
   "generatedBy": "AI"
 }`;
 
-    const aiResponse = await fetch(GEMINI_OPENAI_URL, {
+    const aiResponse = await fetchWithRetry(GEMINI_OPENAI_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GEMINI_API_KEY}`,
