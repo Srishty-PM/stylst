@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { normalizeImageOrientation } from '@/lib/image-orientation';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 export type ClosetItem = Tables<'closet_items'>;
@@ -105,12 +106,13 @@ export const useUpdateClosetItem = () => {
 };
 
 export const uploadClosetImage = async (userId: string, file: File): Promise<string> => {
-  const ext = file.name.split('.').pop();
+  const normalized = await normalizeImageOrientation(file);
+  const ext = normalized.name.split('.').pop();
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage
     .from('closet-images')
-    .upload(path, file, { contentType: file.type });
+    .upload(path, normalized, { contentType: normalized.type });
   if (error) throw error;
 
   const { data } = supabase.storage
