@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const CATEGORIES = ["tops", "bottoms", "outerwear", "dresses", "shoes", "accessories"];
 
-const GEMINI_VISION_MODEL = "gemini-2.5-flash";
+const GEMINI_VISION_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 async function urlToDataUrl(url: string): Promise<string> {

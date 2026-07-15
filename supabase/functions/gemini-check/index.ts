@@ -22,52 +22,54 @@ serve(async (req) => {
     const listData = await listRes.json();
     const models = (listData.models || []).map((m: any) => m.name);
 
-    const want = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash-image"];
-    const availability: Record<string, boolean> = {};
-    for (const w of want) availability[w] = models.includes(`models/${w}`);
-
-    let textTest: any = null;
-    try {
-      const tr = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
-        method: "POST",
-        headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: "Reply with the single word OK." }] }] }),
-      });
-      const tj = await tr.json();
-      textTest = { status: tr.status, text: tj?.candidates?.[0]?.content?.parts?.[0]?.text ?? null, error: tj?.error?.message ?? null };
-    } catch (e) {
-      textTest = { error: String(e) };
+    async function testText(model: string) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Reply with the single word OK." }] }] }),
+        });
+        const j = await r.json();
+        return { status: r.status, ok: r.status === 200, text: j?.candidates?.[0]?.content?.parts?.[0]?.text ?? null, error: j?.error?.message ?? null };
+      } catch (e) {
+        return { error: String(e) };
+      }
     }
 
-    let imageTest: any = null;
-    try {
-      const ir = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent", {
-        method: "POST",
-        headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "A plain red circle centered on a white background." }] }],
-          generationConfig: { responseModalities: ["IMAGE"] },
-        }),
-      });
-      const ij = await ir.json();
-      const parts = ij?.candidates?.[0]?.content?.parts || [];
-      const hasImage = parts.some((p: any) => (p.inlineData || p.inline_data)?.data);
-      imageTest = { status: ir.status, hasImage, error: ij?.error?.message ?? null };
-    } catch (e) {
-      imageTest = { error: String(e) };
+    async function testImage(model: string) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "A plain red circle centered on a white background." }] }],
+            generationConfig: { responseModalities: ["IMAGE"] },
+          }),
+        });
+        const j = await r.json();
+        const parts = j?.candidates?.[0]?.content?.parts || [];
+        return { status: r.status, ok: r.status === 200, hasImage: parts.some((p: any) => (p.inlineData || p.inline_data)?.data), error: j?.error?.message ?? null };
+      } catch (e) {
+        return { error: String(e) };
+      }
     }
+
+    const textModels = ["gemini-3.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview", "gemini-2.0-flash"];
+    const imageModelsToTest = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
+    const textTests: Record<string, any> = {};
+    const imageTests: Record<string, any> = {};
+    for (const m of textModels) textTests[m] = await testText(m);
+    for (const m of imageModelsToTest) imageTests[m] = await testImage(m);
 
     return json({
       ok: listRes.status === 200,
       listStatus: listRes.status,
       listError: listData?.error?.message ?? null,
       modelCount: models.length,
-      availability,
-      textTest,
-      imageTest,
+      textTests,
+      imageTests,
       hasLovable,
       imageModels: models.filter((m: string) => m.includes("image")),
-      flashModels: models.filter((m: string) => m.includes("flash")),
     });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
