@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const GEMINI_VISION_MODEL = "gemini-3.5-flash";
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const MAX_IMAGE_PAYLOAD_BYTES = 12_000_000;
 
 async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
   let res: Response | undefined;
@@ -105,59 +104,36 @@ serve(async (req) => {
         `[${idx}] id:"${i.id}" — ${i.name} (${i.category}${i.subcategory ? "/" + i.subcategory : ""}${i.brand ? ", " + i.brand : ""}${i.colors?.length ? ", colors: " + i.colors.join("/") : ""}${i.tags?.length ? ", tags: " + i.tags.join(", ") : ""})`
     ).join("\n");
 
-    // Build multimodal content: inspiration image + closet item images for visual comparison.
-    // Gemini requires inline base64 (it does not fetch public URLs) with a 20MB request cap,
-    // so images are downscaled via Supabase image transform and budgeted.
     const userContent: any[] = [];
-    let payloadBytes = 0;
 
     const inspoImg = await fetchImageDataUrl(inspiration.image_url);
     if (inspoImg) {
       userContent.push({ type: "image_url", image_url: { url: inspoImg.dataUrl } });
-      payloadBytes += inspoImg.bytes;
     }
-    userContent.push({ type: "text", text: "⬆️ INSPIRATION IMAGE — analyze this outfit.\n\n⬇️ Below are photos of items in the user's closet. Use BOTH the images AND the text list to match." });
-
-    // Include closet item images (up to 30, within the payload budget)
-    const itemsToShow = items.slice(0, 30);
-    for (const item of itemsToShow) {
-      const imgUrl = item.image_url_cleaned || item.image_url;
-      if (!imgUrl || payloadBytes >= MAX_IMAGE_PAYLOAD_BYTES) continue;
-      const img = await fetchImageDataUrl(imgUrl);
-      if (!img) continue;
-      payloadBytes += img.bytes;
-      userContent.push({ type: "image_url", image_url: { url: img.dataUrl } });
-      userContent.push({ type: "text", text: `↑ Closet item id:"${item.id}" — ${item.name} (${item.category})` });
-    }
+    userContent.push({ type: "text", text: "⬆️ INSPIRATION IMAGE — analyze this outfit head-to-toe.\n\n⬇️ Below is the text list of the user's closet items (name, category, colours, tags). Match each inspiration garment against it." });
 
     userContent.push({
       type: "text",
-      text: `\n\nFull closet text list (use this for IDs):\n${closetList}\n\nNow match: for each garment/accessory visible in the INSPIRATION image, find the best match from the closet items above. Be generous — similar style in the same category counts as a match. Only mark missing if truly no similar item exists.`,
+      text: `\n\nUser's closet items (match against these):\n${closetList}\n\nNow match: for each garment/accessory visible in the INSPIRATION image, find a match ONLY from the closet items above, using the SAME garment type and a close colour. If no genuinely close item of that garment type exists, mark it missing rather than forcing a loose substitute.`,
     });
 
-    const systemPrompt = `You are a world-class fashion AI with 99%+ accuracy at outfit matching. You compare an INSPIRATION outfit photo against a user's ACTUAL closet item photos.
+    const systemPrompt = `You are a precise fashion matching AI. You compare an INSPIRATION outfit photo against the TEXT LIST of the user's ACTUAL closet items (each has name, category, colours, tags).
 
 YOUR TASK:
-1. SCAN the inspiration image head-to-toe. List every visible garment and accessory (e.g., blazer, shirt, trousers, shoes, bag, belt, sunglasses, hat, jewelry).
-2. For EACH item, visually compare it against the closet item photos provided. Find the closest match.
-3. Return matched IDs and any truly missing items.
+1. SCAN the inspiration image head-to-toe. List every visible garment and accessory (e.g., trench, blazer, shirt, trousers, jeans, skirt, dress, shoes, bag, belt, sunglasses, hat, jewelry).
+2. For EACH inspiration item, look for a GENUINELY CLOSE match in the closet list.
+3. Return matched IDs and the truly missing items.
 
-MATCHING PHILOSOPHY — MAXIMIZE MATCHES:
-- A match means the closet item could PLAUSIBLY substitute for the inspiration item
-- Same garment type + similar color/tone = MATCH (e.g., houndstooth blazer ↔ check/plaid blazer)
-- Same garment type + different shade but same family = MATCH (navy ↔ dark blue, cream ↔ white, grey ↔ charcoal)
-- Same garment type + similar silhouette = MATCH even if pattern differs (solid black blazer ↔ dark textured blazer)
-- Shoes: match by type first (boots↔boots, flats↔flats, heels↔heels), then color
-- Accessories: be generous — any similar accessory counts
-- ONLY mark MISSING if the closet has ZERO items in that garment category with even a remotely similar look
+STRICT MATCHING RULES:
+- A match requires the SAME garment type AND a close colour/tone. Same-family colours are fine (navy ↔ dark blue, cream ↔ off-white, grey ↔ charcoal); black trousers ↔ black jeans is fine (both bottoms, same colour).
+- Do NOT substitute across garment types. A blazer is NOT a trench coat. A cardigan is NOT a blazer. Ankle boots are NOT sneakers. A tote is NOT a clutch. If the inspiration's garment type is absent from the closet, mark it MISSING.
+- Do NOT stretch across colours. A beige item does not match a black item.
+- When unsure, mark it MISSING. Accuracy matters more than completing the look.
 
-ACCURACY CHECKLIST (run before responding):
-□ Did I identify ALL visible items in the inspiration? (typically 4-8 items)
-□ For each "missing" item — did I REALLY check every closet item? Could any work as a substitute?
-□ Does matched_count + missing_count = total_identified_items?
-□ Am I being too strict? Loosen criteria and re-check.
-
-CRITICAL: It's better to over-match (use a similar item) than to mark something as missing when a reasonable substitute exists.`;
+BEFORE RESPONDING, CHECK:
+□ Did I identify ALL visible inspiration items?
+□ Is every match the SAME garment type AND a close colour? If not, move it to missing.
+□ matched_count + missing_count = total identified items.`;
 
     const messages: any[] = [
       { role: "system", content: systemPrompt },
