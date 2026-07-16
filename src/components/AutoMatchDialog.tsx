@@ -78,10 +78,11 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   const addLook = useAddLook();
   const addSchedule = useAddScheduledOutfit();
   const { user } = useAuth();
-  const [step, setStep] = useState<'confirm' | 'processing' | 'result'>(autoStart ? 'processing' : 'confirm');
+  const [step, setStep] = useState<'confirm' | 'processing' | 'result' | 'error'>(autoStart ? 'processing' : 'confirm');
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showScheduleInput, setShowScheduleInput] = useState(false);
   const [result, setResult] = useState<AutoMatchResult | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [savedLookId, setSavedLookId] = useState<string | null>(null);
   const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
@@ -94,6 +95,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   }, [open, autoStart]);
 
   const handleMatch = async () => {
+    setErrorMsg(null);
     setStep('processing');
     try {
       const res = await autoMatch.mutateAsync({
@@ -103,8 +105,8 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
       setResult(res);
       setStep('result');
     } catch (err: any) {
-      toast({ title: 'Auto-match failed', description: err.message, variant: 'destructive' });
-      setStep('confirm');
+      setErrorMsg(err?.message || 'Something went wrong while styling this look. Please try again.');
+      setStep('error');
     }
   };
 
@@ -113,6 +115,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
     setTimeout(() => {
       setStep(autoStart ? 'processing' : 'confirm');
       setResult(null);
+      setErrorMsg(null);
       setHasStarted(false);
       setShowScheduleInput(false);
       setSavedLookId(null);
@@ -207,6 +210,32 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
               <div>
                 <p className="font-display text-xl font-semibold text-foreground">Styling your look...</p>
                 <p className="text-sm text-muted-foreground mt-2">Matching items from your closet</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Error */}
+        {step === 'error' && (
+          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-xs">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-xl font-semibold text-foreground">Couldn't finish styling</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{errorMsg}</p>
+              </div>
+              <div className="space-y-2">
+                <Button className="w-full" size="lg" onClick={handleMatch}>
+                  <Sparkles className="w-5 h-5 mr-2" /> Try Again
+                </Button>
+                <button
+                  className="w-full text-[12px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider py-1"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
               </div>
             </motion.div>
           </div>

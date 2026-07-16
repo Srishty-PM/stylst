@@ -6,10 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_TEXT_MODEL = "gemini-3.5-flash";
+const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
-async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, attempts = 2): Promise<Response> {
   let res: Response | undefined;
   for (let i = 0; i < attempts; i++) {
     res = await fetch(url, options);
@@ -17,6 +17,22 @@ async function fetchWithRetry(url: string, options: RequestInit, attempts = 4): 
     if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
   }
   return res!;
+}
+
+async function callGeminiWithFallback(apiKey: string, body: Record<string, unknown>): Promise<Response> {
+  let lastRes: Response | undefined;
+  for (const model of GEMINI_MODELS) {
+    const res = await fetchWithRetry(GEMINI_OPENAI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, model }),
+    });
+    if (res.ok) return res;
+    lastRes = res;
+    if ([400, 401, 403].includes(res.status)) return res;
+    console.error(`Gemini model ${model} unavailable (${res.status}), trying next`);
+  }
+  return lastRes!;
 }
 
 serve(async (req) => {
@@ -87,33 +103,20 @@ Based on the user's request, suggest 1-3 outfit combinations using ONLY items fr
 
 If the closet doesn't have enough items for the request, say so honestly and suggest what items they could add. Be enthusiastic but genuine.`;
 
-    const response = await fetchWithRetry(GEMINI_OPENAI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GEMINI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: GEMINI_TEXT_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        stream: true,
-      }),
+    const response = await callGeminiWithFallback(GEMINI_API_KEY, {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+      stream: true,
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      console.error("Gemini error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
+      console.error("Gemini error (all models):", response.status, t);
+      const busyMsg = "Our styling AI is very busy right now. Please try again in a moment.";
+      return new Response(JSON.stringify({ error: busyMsg }), {
+        status: response.status === 429 ? 429 : 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

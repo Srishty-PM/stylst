@@ -52,7 +52,19 @@ export const useAutoMatch = () => {
         body: { inspiration_id, scheduled_date, save_look },
       });
 
-      if (error) throw new Error(error.message || 'Auto-match failed');
+      if (error) {
+        let message = 'The styling AI could not be reached. Please try again.';
+        const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+        if (ctx?.json) {
+          try {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // response had no JSON body, keep the friendly default
+          }
+        }
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },
