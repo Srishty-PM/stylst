@@ -11,7 +11,6 @@ const USER_TABLES_CHILD_FIRST = [
   "scheduled_outfits",
   "matched_looks",
   "inspiration",
-  "influencer_styles",
   "inspiration_sources",
   "closet_items",
   "trips",
