@@ -69,7 +69,22 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
       >
         <h1 className="font-display text-xl tracking-tight text-foreground">Stylst</h1>
-        <div className="text-xs text-muted-foreground tracking-wide uppercase">{profile?.full_name}</div>
+        <div className="flex items-center gap-1">
+          <NavLink
+            to="/ai-stylist"
+            aria-label="AI Stylist"
+            className={({ isActive }) => cn('p-2 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground')}
+          >
+            <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+          </NavLink>
+          <NavLink
+            to="/settings"
+            aria-label="Settings"
+            className={({ isActive }) => cn('p-2 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground')}
+          >
+            <Settings className="w-5 h-5" strokeWidth={1.5} />
+          </NavLink>
+        </div>
       </header>
 
       {/* Main content */}
