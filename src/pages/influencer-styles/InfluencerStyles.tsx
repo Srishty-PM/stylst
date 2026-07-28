@@ -11,31 +11,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, UserCircle, Trash2, ArrowLeft, Sparkles } from 'lucide-react';
 import { useUserInfluencerPreferences, useToggleInfluencerActive, useDeleteInfluencerPreference, type StyleProfile } from '@/hooks/useInfluencerStyles';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import UpgradeModal from '@/components/UpgradeModal';
-
-const TIER_LIMITS: Record<string, number> = { free: 1, premium: 3, premium_plus: Infinity };
 
 const InfluencerStyles = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
   const { data: preferences, isLoading } = useUserInfluencerPreferences();
   const toggleActive = useToggleInfluencerActive();
   const deletePreference = useDeleteInfluencerPreference();
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-
-  const tier = profile?.subscription_tier || 'free';
-  const limit = TIER_LIMITS[tier] ?? 1;
-  const count = preferences?.length ?? 0;
-  const canAdd = count < limit;
 
   const handleAdd = () => {
-    if (!canAdd) {
-      setUpgradeOpen(true);
-      return;
-    }
     navigate('/settings/influencer-styles/add');
   };
 
@@ -49,16 +33,9 @@ const InfluencerStyles = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">Your Style Influencers</h1>
           <p className="text-sm text-muted-foreground">AI learns from your favorite influencers to personalize your outfits</p>
         </div>
-        <Button size="sm" onClick={handleAdd} disabled={!canAdd && tier !== 'free'}>
+        <Button size="sm" onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-1" /> Add
         </Button>
-      </div>
-
-      {/* Tier info */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="secondary" className="text-xs">FREE: 1</Badge>
-        <Badge variant="secondary" className="text-xs">PREMIUM: 3</Badge>
-        <Badge variant="secondary" className="text-xs">PREMIUM+: Unlimited</Badge>
       </div>
 
       {isLoading ? (
@@ -174,8 +151,6 @@ const InfluencerStyles = () => {
           })}
         </div>
       )}
-
-      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason="Upgrade to add more influencer styles" />
     </div>
   );
 };

@@ -7,11 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, Loader2 } from 'lucide-react';
+import { LogOut, Loader2, BarChart3, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePinterestConnect } from '@/hooks/usePinterest';
+import { useIsAdmin } from '@/hooks/useAdminAnalytics';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
@@ -26,15 +27,67 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Settings = () => {
-  const { user, profile, logout } = useAuth();
+  const { user, profile, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
   const { connect, loading: pinterestLoading } = usePinterestConnect();
+  const { data: isAdmin } = useIsAdmin();
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [fullName, setFullName] = useState(profile?.full_name ?? '');
+  const [savingName, setSavingName] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
+
+  useEffect(() => {
+    setFullName(profile?.full_name ?? '');
+  }, [profile?.full_name]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleSaveName = async () => {
+    setSavingName(true);
+    try {
+      await updateProfile({ full_name: fullName.trim() });
+      toast({ title: 'Saved', description: 'Your name has been updated.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not save your name.', variant: 'destructive' });
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user?.email) return;
+    setSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) throw error;
+      toast({ title: 'Check your inbox', description: 'We sent you a link to reset your password.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not send reset email.', variant: 'destructive' });
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
+  const handleCurrencyChange = async (value: string) => {
+    try {
+      await updateProfile({ currency: value });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not save currency.', variant: 'destructive' });
+    }
+  };
+
+  const handleNotificationToggle = (field: 'email_notifications' | 'push_notifications') => async (checked: boolean) => {
+    try {
+      await updateProfile({ [field]: checked });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not save your preference.', variant: 'destructive' });
+    }
   };
 
   const handleConnectPinterest = async () => {
@@ -69,13 +122,26 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Full Name</Label>
-            <Input defaultValue={profile?.full_name || ''} />
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" />
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input value={user?.email} disabled />
+            <Input value={user?.email ?? ''} disabled />
           </div>
-          <Button variant="outline" size="sm">Change Password</Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleSaveName}
+              disabled={savingName || fullName.trim() === (profile?.full_name ?? '')}
+            >
+              {savingName ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
+              Save
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleChangePassword} disabled={sendingReset}>
+              {sendingReset ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
+              Change Password
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -122,7 +188,7 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Currency</Label>
-            <Select defaultValue="gbp">
+            <Select value={profile?.currency ?? 'gbp'} onValueChange={handleCurrencyChange}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="gbp">£ GBP</SelectItem>
@@ -133,14 +199,41 @@ const Settings = () => {
           </div>
           <div className="flex items-center justify-between">
             <Label>Email notifications</Label>
-            <Switch />
+            <Switch
+              checked={profile?.email_notifications ?? true}
+              onCheckedChange={handleNotificationToggle('email_notifications')}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label>Push notifications</Label>
-            <Switch />
+            <Switch
+              checked={profile?.push_notifications ?? false}
+              onCheckedChange={handleNotificationToggle('push_notifications')}
+            />
           </div>
         </CardContent>
       </Card>
+
+      {/* Owner analytics */}
+      {isAdmin && (
+        <Card>
+          <CardContent className="p-4">
+            <button
+              className="w-full flex items-center justify-between"
+              onClick={() => navigate('/analytics')}
+            >
+              <div className="flex items-center gap-3">
+                <BarChart3 className="w-5 h-5 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-foreground">Analytics</p>
+                  <p className="text-xs text-muted-foreground">Signups, generations, and active users</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Account actions */}
       <Card>

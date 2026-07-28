@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info, ShoppingBag } from 'lucide-react';
+import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info, ShoppingBag, Lock } from 'lucide-react';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
 import { useAddLook } from '@/hooks/useLooks';
@@ -78,7 +78,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
   const addLook = useAddLook();
   const addSchedule = useAddScheduledOutfit();
   const { user } = useAuth();
-  const [step, setStep] = useState<'confirm' | 'processing' | 'result' | 'error'>(autoStart ? 'processing' : 'confirm');
+  const [step, setStep] = useState<'confirm' | 'processing' | 'result' | 'error' | 'limit'>(autoStart ? 'processing' : 'confirm');
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showScheduleInput, setShowScheduleInput] = useState(false);
   const [result, setResult] = useState<AutoMatchResult | null>(null);
@@ -106,7 +106,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
       setStep('result');
     } catch (err: any) {
       setErrorMsg(err?.message || 'Something went wrong while styling this look. Please try again.');
-      setStep('error');
+      setStep(err?.limitReached ? 'limit' : 'error');
     }
   };
 
@@ -237,6 +237,27 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
                   Close
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Limit reached */}
+        {step === 'limit' && (
+          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-xs">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <Lock className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-xl font-semibold text-foreground">You've reached your free limit</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{errorMsg}</p>
+              </div>
+              <button
+                className="w-full text-[12px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider py-1"
+                onClick={handleClose}
+              >
+                Close
+              </button>
             </motion.div>
           </div>
         )}

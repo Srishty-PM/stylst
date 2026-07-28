@@ -21,7 +21,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   return r === 0;
 }
 
-async function verifyState(stateParam: string, secret: string): Promise<string | null> {
+async function verifyState(stateParam: string, secret: string): Promise<{ user_id: string; platform: string } | null> {
   const dot = stateParam.lastIndexOf(".");
   if (dot < 1) return null;
   const payload = stateParam.slice(0, dot);
@@ -30,9 +30,9 @@ async function verifyState(stateParam: string, secret: string): Promise<string |
   const expected = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   if (!timingSafeEqual(sig, b64url(new Uint8Array(expected)))) return null;
   try {
-    const { user_id, iat } = JSON.parse(b64urlToString(payload));
+    const { user_id, iat, platform } = JSON.parse(b64urlToString(payload));
     if (!user_id || typeof iat !== "number" || Date.now() - iat > 10 * 60 * 1000) return null;
-    return user_id as string;
+    return { user_id: user_id as string, platform: platform === "native" ? "native" : "web" };
   } catch {
     return null;
   }
@@ -48,10 +48,11 @@ Deno.serve(async (req) => {
       return new Response("Missing code or state", { status: 400 });
     }
 
-    const user_id = await verifyState(stateParam, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    if (!user_id) {
+    const verified = await verifyState(stateParam, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    if (!verified) {
       return new Response("Invalid or expired state", { status: 401 });
     }
+    const { user_id, platform } = verified;
 
     const appId = Deno.env.get("PINTEREST_APP_ID")!;
     const appSecret = Deno.env.get("PINTEREST_APP_SECRET")!;
@@ -111,11 +112,15 @@ Deno.serve(async (req) => {
       .update({ pinterest_connected: true })
       .eq("id", user_id);
 
-    // Redirect back to the app
+    // Redirect back to the app. Native uses a custom scheme so iOS deep-links into the app
+    // instead of leaving the user stranded in the in-app browser.
     const appOrigin = Deno.env.get("APP_ORIGIN") || "https://stylst.shop";
+    const location = platform === "native"
+      ? "stylst://pinterest-callback?success=true"
+      : `${appOrigin}/pinterest-callback?success=true`;
     return new Response(null, {
       status: 302,
-      headers: { Location: `${appOrigin}/pinterest-callback?success=true` },
+      headers: { Location: location },
     });
   } catch (err) {
     console.error("Pinterest callback error:", err);

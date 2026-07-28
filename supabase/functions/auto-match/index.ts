@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const GENERATION_LIMIT = 50;
 
 async function fetchWithRetry(url: string, options: RequestInit, attempts = 2): Promise<Response> {
   let res: Response | undefined;
@@ -114,6 +115,18 @@ serve(async (req) => {
       });
     }
 
+    const { data: consumed, error: consumeError } = await supabase.rpc("consume_generation", { p_limit: GENERATION_LIMIT });
+    if (consumeError) throw new Error("Could not verify your generation allowance. Please try again.");
+    if (consumed === -1) {
+      return new Response(JSON.stringify({
+        error: "You've used all 50 of your free outfit generations.",
+        limit_reached: true,
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Build rich closet list with metadata
     const closetList = items.map(
       (i: any, idx: number) =>
@@ -200,6 +213,7 @@ BEFORE RESPONDING, CHECK:
     });
 
     if (!response.ok) {
+      try { await supabase.rpc("refund_generation"); } catch (_) { /* best-effort */ }
       const t = await response.text();
       console.error("Gemini error (all models):", response.status, t);
       const busyMsg = "Our styling AI is very busy right now. Please try again in a moment.";

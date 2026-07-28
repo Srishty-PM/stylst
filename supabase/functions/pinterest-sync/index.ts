@@ -6,6 +6,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function rehostPinImage(
+  supabaseAdmin: any,
+  userId: string,
+  pinId: string,
+  srcUrl: string
+): Promise<string> {
+  try {
+    const res = await fetch(srcUrl);
+    if (!res.ok) return srcUrl;
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    if (!contentType.startsWith("image/")) return srcUrl;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0) return srcUrl;
+    const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+    const path = `${userId}/pinterest/${pinId}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("inspiration-images")
+      .upload(path, bytes, { contentType, upsert: true });
+    if (error) return srcUrl;
+    const { data } = supabaseAdmin.storage.from("inspiration-images").getPublicUrl(path);
+    return data?.publicUrl || srcUrl;
+  } catch (_) {
+    return srcUrl;
+  }
+}
+
 async function refreshTokenIfNeeded(
   supabaseAdmin: any,
   userId: string,
@@ -179,9 +205,11 @@ Deno.serve(async (req) => {
 
       if (existing) continue;
 
+      const hostedUrl = await rehostPinImage(supabaseAdmin, user.id, pin.id, imageUrl);
+
       await supabaseAdmin.from("inspiration").insert({
         user_id: user.id,
-        image_url: imageUrl,
+        image_url: hostedUrl,
         source_url: pinUrl,
         source_id: source?.id || null,
         description: pin.description || pin.title || null,
@@ -194,8 +222,10 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("Pinterest sync error:", err);
-    const status = (err as any).code === "REAUTH_REQUIRED" ? 401 : 500;
-    return new Response(JSON.stringify({ error: err.message, code: (err as any).code }), {
+    const code = (err as any)?.code;
+    const message = err instanceof Error ? err.message : String(err);
+    const status = code === "REAUTH_REQUIRED" ? 401 : 500;
+    return new Response(JSON.stringify({ error: message, code }), {
       status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

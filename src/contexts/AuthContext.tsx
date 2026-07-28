@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 interface Profile {
   id: string;
@@ -11,7 +12,12 @@ interface Profile {
   onboarding_step: number;
   pinterest_connected: boolean;
   style_goals: string[] | null;
+  currency: string | null;
+  email_notifications: boolean | null;
+  push_notifications: boolean | null;
 }
+
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -22,6 +28,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
   updateOnboardingStep: (step: number) => Promise<void>;
+  updateProfile: (patch: ProfileUpdate) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -40,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, subscription_tier, onboarding_completed, onboarding_step, pinterest_connected, style_goals')
+      .select('id, email, full_name, subscription_tier, onboarding_completed, onboarding_step, pinterest_connected, style_goals, currency, email_notifications, push_notifications')
       .eq('id', userId)
       .single();
     setProfile(data);
@@ -114,8 +122,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(prev => prev ? { ...prev, onboarding_step: step } : prev);
   }, [user]);
 
+  const updateProfile = useCallback(async (patch: ProfileUpdate) => {
+    if (!user) return;
+    const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
+    if (error) throw error;
+    setProfile(prev => prev ? { ...prev, ...patch } as Profile : prev);
+  }, [user]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
+  }, [user, fetchProfile]);
+
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, login, signup, logout, completeOnboarding, updateOnboardingStep }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, login, signup, logout, completeOnboarding, updateOnboardingStep, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

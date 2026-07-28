@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
+import DeepLinkHandler from "@/components/DeepLinkHandler";
 
 // Eagerly load landing & auth (critical path)
 import Landing from "@/pages/Landing";
@@ -30,6 +31,7 @@ const LookDetail = lazy(() => import("@/pages/looks/LookDetail"));
 const AIStylist = lazy(() => import("@/pages/AIStylist"));
 const Calendar = lazy(() => import("@/pages/Calendar"));
 const Settings = lazy(() => import("@/pages/Settings"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
 const InfluencerStyles = lazy(() => import("@/pages/influencer-styles/InfluencerStyles"));
 const AddInfluencerStyle = lazy(() => import("@/pages/influencer-styles/AddInfluencerStyle"));
 const InfluencerStyleDetail = lazy(() => import("@/pages/influencer-styles/InfluencerStyleDetail"));
@@ -104,6 +106,7 @@ const AppRoutes = () => (
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/add" element={<ProtectedRoute><AddInfluencerStyle /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles/:id" element={<ProtectedRoute><InfluencerStyleDetail /></ProtectedRoute>} />
@@ -117,11 +120,13 @@ const AppRoutes = () => (
 
 const App = () => {
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      StatusBar.setStyle({ style: Style.Light });
-      StatusBar.setBackgroundColor({ color: '#F5F0EC' });
-      SplashScreen.hide();
-    }
+    if (!Capacitor.isNativePlatform()) return;
+    (async () => {
+      await StatusBar.setOverlaysWebView({ overlay: false });
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#FAFAF8' });
+      await SplashScreen.hide();
+    })();
   }, []);
 
   return (
@@ -131,6 +136,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <DeepLinkHandler />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
               <AppRoutes />
             </Suspense>

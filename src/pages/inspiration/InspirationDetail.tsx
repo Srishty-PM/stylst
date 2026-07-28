@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInspirations } from '@/hooks/useInspirations';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
+import { useAddLook } from '@/hooks/useLooks';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useClosetItems } from '@/hooks/useClosetItems';
 import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
@@ -40,6 +41,7 @@ const InspirationDetail = () => {
   const { user } = useAuth();
   const { data: inspirations = [] } = useInspirations();
   const autoMatch = useAutoMatch();
+  const addLook = useAddLook();
   const addSchedule = useAddScheduledOutfit();
   const { data: closetItems = [] } = useClosetItems();
 
@@ -71,17 +73,24 @@ const InspirationDetail = () => {
   };
 
   const handleSaveOutfit = async () => {
-    if (!inspirationId || !matchResult) return;
+    if (!inspirationId || !matchResult || !user) return;
     setPageState('saving');
     try {
-      const result = await autoMatch.mutateAsync({
+      const finalItemIds = (matchResult.matched_items || []).map((orig, i) => swappedItems[i] || orig.id);
+      const saved = await addLook.mutateAsync({
+        user_id: user.id,
+        name: matchResult.match_name,
+        closet_item_ids: finalItemIds,
         inspiration_id: inspirationId,
-        save_look: true,
+        occasion: matchResult.occasion || null,
+        season: matchResult.season || null,
+        notes: matchResult.reasoning || null,
+        created_by_ai: true,
+        missing_items: matchResult.missing_items as any,
       });
-      setMatchResult(result);
-      setSavedLookId(result.look?.id || null);
+      setSavedLookId(saved.id);
       setPageState('saved');
-      toast({ title: '✓ Outfit saved!', description: result.match_name });
+      toast({ title: '✓ Outfit saved!', description: matchResult.match_name });
       setShowSchedule(true);
     } catch (err: any) {
       toast({ title: 'Save failed', description: err.message, variant: 'destructive' });

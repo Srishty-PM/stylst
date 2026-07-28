@@ -306,12 +306,16 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          currency: string
           email: string
+          email_notifications: boolean
           full_name: string | null
+          generation_count: number
           id: string
           onboarding_completed: boolean
           onboarding_step: number | null
           pinterest_connected: boolean
+          push_notifications: boolean
           style_goals: string[] | null
           subscription_expires_at: string | null
           subscription_tier: string
@@ -319,12 +323,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency?: string
           email: string
+          email_notifications?: boolean
           full_name?: string | null
+          generation_count?: number
           id: string
           onboarding_completed?: boolean
           onboarding_step?: number | null
           pinterest_connected?: boolean
+          push_notifications?: boolean
           style_goals?: string[] | null
           subscription_expires_at?: string | null
           subscription_tier?: string
@@ -332,12 +340,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency?: string
           email?: string
+          email_notifications?: boolean
           full_name?: string | null
+          generation_count?: number
           id?: string
           onboarding_completed?: boolean
           onboarding_step?: number | null
           pinterest_connected?: boolean
+          push_notifications?: boolean
           style_goals?: string[] | null
           subscription_expires_at?: string | null
           subscription_tier?: string
@@ -474,7 +486,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_generation: {
+        Args: { p_limit: number }
+        Returns: number
+      }
+      refund_generation: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

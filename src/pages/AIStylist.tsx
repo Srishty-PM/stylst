@@ -174,6 +174,7 @@ const AIStylist = () => {
           <Textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
+            maxLength={800}
             placeholder={activeInfluencers?.length ? `e.g., "Winter office outfit in ${activeInfluencers[0].influencer_name} style"` : "Tell me what you need... e.g. 'Create a winter office outfit with my black coat'"}
             className="min-h-[80px]"
             onKeyDown={e => {

@@ -1,4 +1,5 @@
-import { Upload, Link2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, Link2, Loader2, CheckCircle2, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react';
+import { isNativePicker, takePhoto, pickSinglePhoto, MAX_UPLOAD_BYTES } from '@/lib/image-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,41 @@ const AddInspiration = () => {
   const { sync, syncing } = useSyncPinterestBoard();
   const reauthRequired = (boardsError as any)?.code === 'REAUTH_REQUIRED';
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const selectFile = (f: File) => {
+    if (f.size > MAX_UPLOAD_BYTES) {
+      toast({ title: 'Photo too large', description: 'Please choose an image under 5MB.', variant: 'destructive' });
+      return;
+    }
     setFile(f);
     setPreview(URL.createObjectURL(f));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) selectFile(f);
+    e.target.value = '';
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const f = await takePhoto();
+      if (f) selectFile(f);
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) {
+        toast({ title: 'Camera error', description: err.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const handlePickLibrary = async () => {
+    try {
+      const f = await pickSinglePhoto('library');
+      if (f) selectFile(f);
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) {
+        toast({ title: 'Could not open photo library', description: err.message, variant: 'destructive' });
+      }
+    }
   };
 
   const handleSaveUpload = async () => {
@@ -107,20 +138,40 @@ const AddInspiration = () => {
           <CardDescription>Add any fashion photo as inspiration.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <label className="block cursor-pointer">
-            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/50 transition-colors">
-              {preview ? (
-                <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-lg object-cover" />
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-foreground font-medium">Tap to upload</p>
-                  <p className="text-xs text-muted-foreground">JPG, PNG, WebP · Max 5MB</p>
-                </>
+          {isNativePicker() ? (
+            <div className="space-y-3">
+              {preview && (
+                <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                  <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-lg object-cover" />
+                </div>
               )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button type="button" variant="outline" className="h-20 flex-col gap-1.5" onClick={handleTakePhoto}>
+                  <CameraIcon className="w-6 h-6 text-accent" />
+                  <span className="text-sm">Take Photo</span>
+                </Button>
+                <Button type="button" variant="outline" className="h-20 flex-col gap-1.5" onClick={handlePickLibrary}>
+                  <ImageIcon className="w-6 h-6 text-accent" />
+                  <span className="text-sm">Photo Library</span>
+                </Button>
+              </div>
             </div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-          </label>
+          ) : (
+            <label className="block cursor-pointer">
+              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/50 transition-colors">
+                {preview ? (
+                  <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-lg object-cover" />
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-foreground font-medium">Tap to upload</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG, WebP · Max 5MB</p>
+                  </>
+                )}
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </label>
+          )}
           <div className="space-y-2">
             <Label>Description (optional)</Label>
             <Input

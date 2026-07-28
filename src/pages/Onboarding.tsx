@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import {
   ArrowRight, Sparkles, Loader2, Check, X, Upload,
-  ImageIcon, ShirtIcon, ChevronLeft, Pencil,
+  ImageIcon, ShirtIcon, ChevronLeft, Pencil, Camera as CameraIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
@@ -19,6 +19,7 @@ import { usePinterestConnect } from '@/hooks/usePinterest';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CATEGORIES } from '@/lib/mock-data';
+import { isNativePicker, takePhoto, pickFromLibrary, MAX_UPLOAD_BYTES } from '@/lib/image-picker';
 
 const VALID_CATEGORIES = CATEGORIES.filter(c => c !== 'All').map(c => c.toLowerCase());
 const COLOR_OPTIONS = ['Black','White','Gray','Navy','Blue','Red','Green','Yellow','Orange','Pink','Purple','Brown','Beige','Cream'];
@@ -76,13 +77,44 @@ const Onboarding = () => {
 
   const [matches, setMatches] = useState<MatchResult[]>([]);
 
+  // Shared image helpers
+  const withSizeFilter = (files: File[]) =>
+    files.filter((f) => {
+      if (f.size > MAX_UPLOAD_BYTES) {
+        toast({ title: 'Photo too large', description: `${f.name || 'A photo'} is over 5MB and was skipped.`, variant: 'destructive' });
+        return false;
+      }
+      return true;
+    });
+
+  const nativeCameraTo = async (add: (files: File[]) => void) => {
+    try {
+      const f = await takePhoto();
+      if (f) add([f]);
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) toast({ title: 'Camera error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const nativeLibraryTo = async (add: (files: File[]) => void) => {
+    try {
+      add(await pickFromLibrary());
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) toast({ title: 'Could not open photo library', description: err.message, variant: 'destructive' });
+    }
+  };
+
   // Inspiration handlers
+  const addInspoFiles = (files: File[]) => {
+    const valid = withSizeFilter(files).slice(0, 100);
+    if (!valid.length) return;
+    setInspoFiles(prev => [...prev, ...valid]);
+    setInspoPreviews(prev => [...prev, ...valid.map(f => URL.createObjectURL(f))]);
+  };
+
   const handleInspoFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const arr = Array.from(files).slice(0, 100);
-    setInspoFiles(prev => [...prev, ...arr]);
-    setInspoPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
+    if (e.target.files) addInspoFiles(Array.from(e.target.files));
+    e.target.value = '';
   };
 
   const handleUploadInspo = async () => {
@@ -117,12 +149,16 @@ const Onboarding = () => {
   };
 
   // Closet handlers
+  const addClosetFiles = (files: File[]) => {
+    const valid = withSizeFilter(files).slice(0, 50);
+    if (!valid.length) return;
+    setClosetFiles(prev => [...prev, ...valid]);
+    setClosetPreviews(prev => [...prev, ...valid.map(f => URL.createObjectURL(f))]);
+  };
+
   const handleClosetFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const arr = Array.from(files).slice(0, 50);
-    setClosetFiles(prev => [...prev, ...arr]);
-    setClosetPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
+    if (e.target.files) addClosetFiles(Array.from(e.target.files));
+    e.target.value = '';
   };
 
   const handleAnalyzeCloset = async () => {
@@ -308,14 +344,27 @@ const Onboarding = () => {
                 {/* Option 1: Upload Photos */}
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">1 · Upload Photos</p>
-                  <label className="block cursor-pointer">
-                    <div className="border-2 border-dashed border-border rounded-lg p-5 text-center hover:border-primary/40 transition-colors">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground mx-auto mb-1.5" />
-                      <p className="text-sm font-medium text-foreground">Tap to upload photos</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Screenshots, saved images, magazine photos</p>
+                  {isNativePicker() ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button type="button" variant="outline" className="h-20 flex-col gap-1.5" onClick={() => nativeCameraTo(addInspoFiles)}>
+                        <CameraIcon className="w-6 h-6 text-primary" />
+                        <span className="text-sm">Take Photo</span>
+                      </Button>
+                      <Button type="button" variant="outline" className="h-20 flex-col gap-1.5" onClick={() => nativeLibraryTo(addInspoFiles)}>
+                        <ImageIcon className="w-6 h-6 text-primary" />
+                        <span className="text-sm">Photo Library</span>
+                      </Button>
                     </div>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
-                  </label>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <div className="border-2 border-dashed border-border rounded-lg p-5 text-center hover:border-primary/40 transition-colors">
+                        <ImageIcon className="w-6 h-6 text-muted-foreground mx-auto mb-1.5" />
+                        <p className="text-sm font-medium text-foreground">Tap to upload photos</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Screenshots, saved images, magazine photos</p>
+                      </div>
+                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
+                    </label>
+                  )}
                   {inspoPreviews.length > 0 && (
                     <div className="space-y-1.5">
                       <p className="text-xs text-muted-foreground">{inspoPreviews.length} photos selected</p>
@@ -407,21 +456,41 @@ const Onboarding = () => {
                   <h2 className="font-display text-2xl font-bold text-foreground">Upload Your Closet</h2>
                   <p className="text-sm text-muted-foreground mt-1">Snap photos of your clothes — AI handles the rest</p>
                 </div>
-                <label className="block cursor-pointer">
-                  <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/40 transition-colors">
-                    <ShirtIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm font-medium text-foreground">Tap to upload</p>
-                    <p className="text-xs text-muted-foreground mt-1">One item per photo · Up to 50</p>
+                {isNativePicker() ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button type="button" variant="outline" className="h-24 flex-col gap-2" onClick={() => nativeCameraTo(addClosetFiles)}>
+                      <CameraIcon className="w-7 h-7 text-primary" />
+                      <span className="text-sm">Take Photo</span>
+                    </Button>
+                    <Button type="button" variant="outline" className="h-24 flex-col gap-2" onClick={() => nativeLibraryTo(addClosetFiles)}>
+                      <ShirtIcon className="w-7 h-7 text-primary" />
+                      <span className="text-sm">Photo Library</span>
+                    </Button>
                   </div>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
-                </label>
+                ) : (
+                  <label className="block cursor-pointer">
+                    <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/40 transition-colors">
+                      <ShirtIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm font-medium text-foreground">Tap to upload</p>
+                      <p className="text-xs text-muted-foreground mt-1">One item per photo · Up to 50</p>
+                    </div>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
+                  </label>
+                )}
                 {closetPreviews.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <p className="text-xs text-muted-foreground">{closetPreviews.length} items</p>
-                      <label className="text-xs text-primary cursor-pointer hover:underline">
-                        Add more <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
-                      </label>
+                      {isNativePicker() ? (
+                        <div className="flex gap-3">
+                          <button type="button" className="text-xs text-primary hover:underline" onClick={() => nativeCameraTo(addClosetFiles)}>+ Camera</button>
+                          <button type="button" className="text-xs text-primary hover:underline" onClick={() => nativeLibraryTo(addClosetFiles)}>+ Library</button>
+                        </div>
+                      ) : (
+                        <label className="text-xs text-primary cursor-pointer hover:underline">
+                          Add more <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
+                        </label>
+                      )}
                     </div>
                     <div className="grid grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
                       {closetPreviews.map((url, i) => (

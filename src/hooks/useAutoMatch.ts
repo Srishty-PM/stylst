@@ -54,18 +54,26 @@ export const useAutoMatch = () => {
 
       if (error) {
         let message = 'The styling AI could not be reached. Please try again.';
-        const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+        let limitReached = false;
+        const ctx = (error as { context?: { json?: () => Promise<{ error?: string; limit_reached?: boolean }> } }).context;
         if (ctx?.json) {
           try {
             const body = await ctx.json();
             if (body?.error) message = body.error;
+            if (body?.limit_reached) limitReached = true;
           } catch {
             // response had no JSON body, keep the friendly default
           }
         }
-        throw new Error(message);
+        const e = new Error(message) as Error & { limitReached?: boolean };
+        e.limitReached = limitReached;
+        throw e;
       }
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        const e = new Error(data.error) as Error & { limitReached?: boolean };
+        e.limitReached = !!data.limit_reached;
+        throw e;
+      }
       return data;
     },
     onSuccess: () => {

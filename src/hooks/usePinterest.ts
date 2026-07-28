@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,13 +14,21 @@ export const usePinterestConnect = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not logged in');
 
+      const native = Capacitor.isNativePlatform();
       const res = await supabase.functions.invoke('pinterest-auth', {
         headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { platform: native ? 'native' : 'web' },
       });
 
       if (res.error) throw res.error;
       const { url } = res.data;
-      window.location.href = url;
+      if (native) {
+        // The global deep-link handler catches the stylst:// return and closes this browser.
+        await Browser.open({ url });
+        setLoading(false);
+      } else {
+        window.location.href = url;
+      }
     } catch (err: any) {
       setLoading(false);
       throw err;

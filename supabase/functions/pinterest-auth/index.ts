@@ -12,8 +12,8 @@ function b64url(bytes: Uint8Array): string {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function signState(userId: string, secret: string): Promise<string> {
-  const payload = b64url(new TextEncoder().encode(JSON.stringify({ user_id: userId, iat: Date.now() })));
+async function signState(userId: string, platform: string, secret: string): Promise<string> {
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ user_id: userId, platform, iat: Date.now() })));
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   return `${payload}.${b64url(new Uint8Array(sig))}`;
@@ -39,9 +39,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    let platform = "web";
+    try {
+      const body = await req.json();
+      if (body?.platform === "native") platform = "native";
+    } catch { /* no body, default web */ }
+
     const appId = Deno.env.get("PINTEREST_APP_ID")!;
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/pinterest-callback`;
-    const state = await signState(user.id, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const state = await signState(user.id, platform, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const scopes = "boards:read,pins:read";
 
     const authUrl =

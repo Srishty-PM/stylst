@@ -18,14 +18,40 @@ Deno.serve(async (req) => {
     });
   }
 
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+
+  // Verify the caller is a signed-in admin/owner before touching any global metrics.
+  const authClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error: authError } = await authClient.auth.getUser();
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const { data: isAdmin, error: adminError } = await authClient.rpc("is_admin");
+  if (adminError || !isAdmin) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
+    SUPABASE_URL,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   try {
     const url = new URL(req.url);
-    const days = parseInt(url.searchParams.get("days") || "30");
+    let days = parseInt(url.searchParams.get("days") || "0");
+    if (!days) {
+      const body = await req.json().catch(() => ({}));
+      days = parseInt(String(body?.days ?? "")) || 30;
+    }
+    days = Math.min(Math.max(days, 1), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     // Unique visitors

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
@@ -39,6 +41,14 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
   const query = item.name;
   const url = googleShoppingUrl(query, range);
 
+  const handleShop = async () => {
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({ url, presentationStyle: 'popover' });
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl px-6 pb-8">
@@ -63,11 +73,9 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
           <PriceFilter min={PRICE_MIN} max={PRICE_MAX} value={range} onChange={setRange} currency="£" />
         </div>
 
-        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
-          <Button className="w-full gap-2">
-            <ExternalLink className="w-4 h-4" /> Shop on Google Shopping
-          </Button>
-        </a>
+        <Button className="w-full gap-2" onClick={handleShop}>
+          <ExternalLink className="w-4 h-4" /> Shop on Google Shopping
+        </Button>
 
         <p className="text-[11px] text-muted-foreground text-center pt-3">
           {item.name} · £{range[0]} to £{range[1]}

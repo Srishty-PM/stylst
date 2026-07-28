@@ -64,13 +64,16 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* Mobile header */}
-      <header className="lg:hidden flex items-center justify-between px-6 py-4 border-b border-border bg-background sticky top-0 z-40">
+      <header
+        className="lg:hidden flex items-center justify-between px-6 py-4 border-b border-border bg-background sticky top-0 z-40"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+      >
         <h1 className="font-display text-xl tracking-tight text-foreground">Stylst</h1>
         <div className="text-xs text-muted-foreground tracking-wide uppercase">{profile?.full_name}</div>
       </header>
 
       {/* Main content */}
-      <main className="lg:pl-60 pb-20 lg:pb-6">
+      <main className="lg:pl-60 pb-[calc(5rem_+_env(safe-area-inset-bottom))] lg:pb-6">
         <div className="max-w-5xl mx-auto px-6 py-8 lg:px-12">
           <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
             {children}
@@ -79,7 +82,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-card border-t border-border z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 bg-card border-t border-border z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="flex items-center justify-around py-2">
           {bottomNavItems.map(item => {
             const isActive = location.pathname.startsWith(item.to);

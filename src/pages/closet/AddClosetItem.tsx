@@ -1,4 +1,5 @@
-import { Upload, Loader2, Check, X, Sparkles, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Upload, Loader2, Check, X, Sparkles, ArrowRight, ChevronLeft, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react';
+import { isNativePicker, takePhoto, pickFromLibrary, MAX_UPLOAD_BYTES } from '@/lib/image-picker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,23 +48,60 @@ const AddClosetItem = () => {
   const [items, setItems] = useState<AnalyzedItem[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const addFiles = (incoming: File[]) => {
+    const valid = incoming.filter((f) => {
+      if (f.size > MAX_UPLOAD_BYTES) {
+        toast({
+          title: 'Photo too large',
+          description: `${f.name || 'That photo'} is over 5MB. Please choose a smaller image.`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      return true;
+    });
+    if (!valid.length) return;
+    setItems(prev => [
+      ...prev,
+      ...valid.map((file, i) => ({
+        index: prev.length + i,
+        file,
+        preview: URL.createObjectURL(file),
+        name: '',
+        category: '',
+        colors: [] as string[],
+        brand: null,
+        confidence: 0,
+        needs_review: true,
+        status: 'pending' as const,
+      })),
+    ]);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = e.target.files;
-    if (!newFiles) return;
-    const arr = Array.from(newFiles);
-    const newItems: AnalyzedItem[] = arr.map((file, i) => ({
-      index: items.length + i,
-      file,
-      preview: URL.createObjectURL(file),
-      name: '',
-      category: '',
-      colors: [],
-      brand: null,
-      confidence: 0,
-      needs_review: true,
-      status: 'pending',
-    }));
-    setItems(prev => [...prev, ...newItems]);
+    if (e.target.files) addFiles(Array.from(e.target.files));
+    e.target.value = '';
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const file = await takePhoto();
+      if (file) addFiles([file]);
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) {
+        toast({ title: 'Camera error', description: err.message, variant: 'destructive' });
+      }
+    }
+  };
+
+  const handlePickLibrary = async () => {
+    try {
+      addFiles(await pickFromLibrary());
+    } catch (err: any) {
+      if (err?.message && !/cancel/i.test(err.message)) {
+        toast({ title: 'Could not open photo library', description: err.message, variant: 'destructive' });
+      }
+    }
   };
 
   const removeItem = (index: number) => {
@@ -237,23 +275,43 @@ const AddClosetItem = () => {
         {/* STEP 1: Upload */}
         {step === 'upload' && (
           <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-            <label className="block cursor-pointer">
-              <div className="border-2 border-dashed border-border rounded-xl p-10 text-center hover:border-accent/50 transition-colors">
-                <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">Tap to upload your clothes</p>
-                <p className="text-xs text-muted-foreground mt-1">Select multiple photos · JPG, PNG, WebP · Max 5MB each</p>
+            {isNativePicker() ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Button type="button" variant="outline" className="h-24 flex-col gap-2" onClick={handleTakePhoto}>
+                  <CameraIcon className="w-7 h-7 text-accent" />
+                  <span className="text-sm">Take Photo</span>
+                </Button>
+                <Button type="button" variant="outline" className="h-24 flex-col gap-2" onClick={handlePickLibrary}>
+                  <ImageIcon className="w-7 h-7 text-accent" />
+                  <span className="text-sm">Photo Library</span>
+                </Button>
               </div>
-              <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
-            </label>
+            ) : (
+              <label className="block cursor-pointer">
+                <div className="border-2 border-dashed border-border rounded-xl p-10 text-center hover:border-accent/50 transition-colors">
+                  <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-foreground">Tap to upload your clothes</p>
+                  <p className="text-xs text-muted-foreground mt-1">Select multiple photos · JPG, PNG, WebP · Max 5MB each</p>
+                </div>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+              </label>
+            )}
 
             {items.length > 0 && (
               <>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">{items.length} item{items.length !== 1 ? 's' : ''} selected</p>
-                  <label className="text-xs text-accent font-medium cursor-pointer hover:underline">
-                    + Add more
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
-                  </label>
+                  {isNativePicker() ? (
+                    <div className="flex gap-3">
+                      <button type="button" className="text-xs text-accent font-medium hover:underline" onClick={handleTakePhoto}>+ Camera</button>
+                      <button type="button" className="text-xs text-accent font-medium hover:underline" onClick={handlePickLibrary}>+ Library</button>
+                    </div>
+                  ) : (
+                    <label className="text-xs text-accent font-medium cursor-pointer hover:underline">
+                      + Add more
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                    </label>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                   {items.map(item => (

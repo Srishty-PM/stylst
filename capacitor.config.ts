@@ -1,13 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.0b454f6127b041ee820de70c6c07f718',
-  appName: 'stylst',
+  appId: 'shop.stylst.app',
+  appName: 'Stylst',
   webDir: 'dist',
-  server: {
-    url: 'https://0b454f61-27b0-41ee-820d-e70c6c07f718.lovableproject.com?forceHideBadge=true',
-    cleartext: true,
-  },
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
@@ -19,8 +15,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
+      overlaysWebView: false,
       style: 'LIGHT',
-      backgroundColor: '#F5F0EC',
+      backgroundColor: '#FAFAF8',
     },
   },
 };
