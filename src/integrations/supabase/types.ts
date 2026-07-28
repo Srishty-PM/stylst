@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -486,18 +501,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      consume_generation: {
-        Args: { p_limit: number }
-        Returns: number
-      }
-      refund_generation: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      consume_generation: { Args: { p_limit: number }; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
+      refund_generation: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
