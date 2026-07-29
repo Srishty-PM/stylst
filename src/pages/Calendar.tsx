@@ -19,6 +19,22 @@ import { usePageView } from '@/hooks/useAnalytics';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
+const LookTile = ({ images, size = 'sm' }: { images: string[]; size?: 'sm' | 'lg' }) => {
+  const imgs = images.slice(0, 4);
+  const box = size === 'lg' ? 'w-14 h-[76px]' : 'w-10 h-[52px]';
+  const layout =
+    imgs.length === 1 ? '' :
+    imgs.length === 2 ? 'grid grid-rows-2' :
+    'grid grid-cols-2 grid-rows-2';
+  return (
+    <div className={`${box} rounded-sm overflow-hidden bg-muted border border-border ${layout} gap-px`}>
+      {imgs.map((src, i) => (
+        <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+      ))}
+    </div>
+  );
+};
+
 const Calendar = () => {
   usePageView('calendar');
   const { user } = useAuth();
@@ -45,15 +61,18 @@ const Calendar = () => {
   const markWorn = useMarkWorn();
   const deleteOutfit = useDeleteScheduledOutfit();
 
-  // Build a map: lookId -> first closet item image
-  const lookThumbnails = useMemo(() => {
-    const map: Record<string, string> = {};
+  // Build a map: lookId -> up to 4 closet item images (full look, not just first item)
+  const lookItemImages = useMemo(() => {
+    const map: Record<string, string[]> = {};
     looks.forEach(look => {
       if (look.closet_item_ids?.length) {
-        const item = closetItems.find(ci => ci.id === look.closet_item_ids[0]);
-        if (item) {
-          map[look.id] = item.image_url_cleaned || item.image_url;
-        }
+        const imgs = look.closet_item_ids
+          .map(id => closetItems.find(ci => ci.id === id))
+          .filter((it): it is NonNullable<typeof it> => !!it)
+          .map(it => it.image_url_cleaned || it.image_url)
+          .filter((u): u is string => !!u)
+          .slice(0, 4);
+        if (imgs.length) map[look.id] = imgs;
       }
     });
     return map;
@@ -185,7 +204,7 @@ const Calendar = () => {
           const dayOutfits = getOutfitsForDay(day);
           const hasOutfit = dayOutfits.length > 0;
           const firstOutfit = dayOutfits[0];
-          const thumbUrl = firstOutfit ? lookThumbnails[firstOutfit.matched_look_id] : null;
+          const lookImgs = firstOutfit ? lookItemImages[firstOutfit.matched_look_id] : null;
           const today = isToday(day);
 
           return (
@@ -203,15 +222,10 @@ const Calendar = () => {
                 {format(day, 'd')}
               </div>
 
-              {/* Outfit thumbnail or add button */}
-              {hasOutfit && thumbUrl ? (
+              {/* Outfit full-look tile or add button */}
+              {hasOutfit && lookImgs?.length ? (
                 <div className="flex-1 flex items-center justify-center px-1 py-1">
-                  <img
-                    src={thumbUrl}
-                    alt="Outfit"
-                    className="max-h-[52px] max-w-full w-auto object-contain rounded-sm"
-                    loading="lazy"
-                  />
+                  <LookTile images={lookImgs} />
                   {dayOutfits.length > 1 && (
                     <span className="absolute bottom-1 right-1 text-[10px] text-muted-foreground font-medium">
                       +{dayOutfits.length - 1}
@@ -311,12 +325,12 @@ const Calendar = () => {
           <div className="space-y-3 pb-4">
             {selectedDayOutfits.map(outfit => {
               const look = looks.find(l => l.id === outfit.matched_look_id);
-              const thumb = lookThumbnails[outfit.matched_look_id];
+              const lookImgs = lookItemImages[outfit.matched_look_id];
               return (
                 <div key={outfit.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  {thumb && (
-                    <img src={thumb} alt="" className="w-12 h-16 object-contain rounded-sm" />
-                  )}
+                  {lookImgs?.length ? (
+                    <LookTile images={lookImgs} size="lg" />
+                  ) : null}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{look?.name || 'Outfit'}</p>
                     {outfit.event_name && (

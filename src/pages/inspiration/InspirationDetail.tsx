@@ -6,7 +6,8 @@ import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
 import { useAddLook } from '@/hooks/useLooks';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useClosetItems } from '@/hooks/useClosetItems';
-import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
+import { categoryIcon } from '@/lib/categoryIcon';
+import StylingProgress from '@/components/StylingProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +16,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Sparkles, Loader2, ArrowLeft, Check, CalendarPlus, Shirt,
-  Footprints, Watch, ShoppingBag as BagIcon, ArrowLeftRight, Save,
+  Sparkles, Loader2, ArrowLeft, Check, CalendarPlus,
+  ShoppingBag as BagIcon, ArrowLeftRight, Save,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
@@ -24,14 +25,6 @@ import { format } from 'date-fns';
 import ItemSwapSheet from '@/components/ItemSwapSheet';
 import type { MissingItem } from '@/hooks/useAutoMatch';
 import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
-
-const categoryIcon = (category: string) => {
-  const c = category?.toLowerCase() || '';
-  if (c.includes('shoe') || c.includes('boot') || c.includes('sneaker') || c.includes('flat')) return Footprints;
-  if (c.includes('bag') || c.includes('purse') || c.includes('clutch')) return BagIcon;
-  if (c.includes('accessor') || c.includes('jewel') || c.includes('watch') || c.includes('belt')) return Watch;
-  return Shirt;
-};
 
 type PageState = 'idle' | 'analyzing' | 'results' | 'saving' | 'saved';
 
@@ -138,7 +131,6 @@ const InspirationDetail = () => {
     };
   });
   const missingItems = matchResult?.missing_items || [];
-  const thumbnails = useMissingThumbnails(missingItems);
   const totalItems = matchedItems.length + missingItems.length;
   const matchedCount = matchedItems.length;
   const completionPct = totalItems > 0 ? Math.round((matchedCount / totalItems) * 100) : 100;
@@ -252,20 +244,15 @@ const InspirationDetail = () => {
                   <div className="divide-y divide-border">
                     {missingItems.map((mi, i) => {
                       const Icon = categoryIcon(mi.category);
-                      const thumb = thumbnails[i];
                       return (
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setShopItem({ ...mi, thumbnail_url: thumb || null })}
+                          onClick={() => setShopItem(mi)}
                           className="w-full flex items-center gap-3 py-2.5 text-left transition-colors hover:bg-muted/40 rounded-sm px-1 -mx-1"
                         >
                           <div className="w-14 h-14 rounded-sm bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border">
-                            {thumb ? (
-                              <img src={thumb} alt={mi.name} className="w-full h-full object-contain" />
-                            ) : (
-                              <Icon className="w-6 h-6 text-muted-foreground/40 animate-pulse" />
-                            )}
+                            <Icon className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{mi.name}</p>
@@ -344,20 +331,9 @@ const InspirationDetail = () => {
 
           {/* Analyzing State */}
           {pageState === 'analyzing' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12 space-y-6"
-            >
-              <div className="relative mx-auto w-16 h-16">
-                <Loader2 className="w-16 h-16 text-primary animate-spin" />
-                <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-              </div>
-              <div>
-                <p className="font-display text-xl font-semibold text-foreground">Analyzing your inspiration...</p>
-                <p className="text-sm text-muted-foreground mt-2">Matching items from your closet</p>
-              </div>
-            </motion.div>
+            <div className="py-12">
+              <StylingProgress title="Analyzing your inspiration..." />
+            </div>
           )}
         </>
       )}

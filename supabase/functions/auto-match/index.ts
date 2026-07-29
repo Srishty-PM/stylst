@@ -10,30 +10,39 @@ const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash
 const GEMINI_OPENAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const GENERATION_LIMIT = 50;
 
-async function fetchWithRetry(url: string, options: RequestInit, attempts = 2): Promise<Response> {
-  let res: Response | undefined;
-  for (let i = 0; i < attempts; i++) {
-    res = await fetch(url, options);
-    if (res.ok || ![429, 500, 502, 503].includes(res.status)) return res;
-    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
-  }
-  return res!;
-}
+const PER_ATTEMPT_TIMEOUT_MS = 20000;
+const OVERALL_DEADLINE_MS = 50000;
 
 async function callGeminiWithFallback(apiKey: string, body: Record<string, unknown>): Promise<Response> {
-  let lastRes: Response | undefined;
+  const started = Date.now();
+  let lastStatus = 503;
+
   for (const model of GEMINI_MODELS) {
-    const res = await fetchWithRetry(GEMINI_OPENAI_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, model }),
-    });
-    if (res.ok) return res;
-    lastRes = res;
-    if ([400, 401, 403].includes(res.status)) return res;
-    console.error(`Gemini model ${model} unavailable (${res.status}), trying next`);
+    const remaining = OVERALL_DEADLINE_MS - (Date.now() - started);
+    if (remaining < 3000) break;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(PER_ATTEMPT_TIMEOUT_MS, remaining));
+    try {
+      const res = await fetch(GEMINI_OPENAI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, model }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) return res;
+      lastStatus = res.status;
+      if ([400, 401, 403].includes(res.status)) return res;
+      await res.text().catch(() => {});
+      console.error(`Gemini model ${model} returned ${res.status}, trying next`);
+    } catch (err) {
+      clearTimeout(timer);
+      console.error(`Gemini model ${model} aborted/failed (${(err as Error)?.name || "error"}), trying next`);
+    }
   }
-  return lastRes!;
+
+  return new Response(JSON.stringify({ error: "AI timed out" }), { status: lastStatus === 429 ? 429 : 503 });
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

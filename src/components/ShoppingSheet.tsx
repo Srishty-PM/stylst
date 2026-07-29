@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, ExternalLink } from 'lucide-react';
 import PriceFilter from '@/components/shopping/PriceFilter';
+import { categoryIcon } from '@/lib/categoryIcon';
 import type { MissingItem } from '@/hooks/useAutoMatch';
 
 export type ShopMissingItem = MissingItem & { thumbnail_url?: string | null };
@@ -40,6 +41,7 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
 
   const query = item.name;
   const url = googleShoppingUrl(query, range);
+  const Icon = categoryIcon(item.category);
 
   const handleShop = async () => {
     if (Capacitor.isNativePlatform()) {
@@ -61,13 +63,11 @@ const ShoppingSheet = ({ open, onOpenChange, item }: ShoppingSheetProps) => {
           </SheetDescription>
         </SheetHeader>
 
-        {item.thumbnail_url && (
-          <div className="flex justify-center pb-4">
-            <div className="w-20 h-20 rounded-xl overflow-hidden border border-border shadow-sm bg-card">
-              <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-contain p-1" />
-            </div>
+        <div className="flex justify-center pb-4">
+          <div className="w-20 h-20 rounded-xl flex items-center justify-center border border-border shadow-sm bg-muted">
+            <Icon className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
           </div>
-        )}
+        </div>
 
         <div className="pb-5">
           <PriceFilter min={PRICE_MIN} max={PRICE_MAX} value={range} onChange={setRange} currency="£" />

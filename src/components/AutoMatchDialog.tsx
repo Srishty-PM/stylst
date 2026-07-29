@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Sparkles, CalendarPlus, ArrowRight, Info, ShoppingBag, Lock } from 'lucide-react';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
-import { useMissingThumbnails } from '@/hooks/useMissingThumbnails';
+import { categoryIcon } from '@/lib/categoryIcon';
+import StylingProgress from '@/components/StylingProgress';
 import { useAddLook } from '@/hooks/useLooks';
 import { useAddScheduledOutfit } from '@/hooks/useScheduledOutfits';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,37 +19,26 @@ import type { MissingItem } from '@/hooks/useAutoMatch';
 import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
 
 const MissingItemsCollage = ({ items, onShop }: { items: MissingItem[]; onShop: (item: ShopMissingItem) => void }) => {
-  const thumbnails = useMissingThumbnails(items);
   if (!items.length) return null;
 
   return (
     <div className="flex flex-col items-center px-4 py-6">
       <div className="w-full max-w-md grid grid-cols-2 gap-3 auto-rows-auto">
         {items.map((item, i) => {
-          const thumb = thumbnails[i];
+          const Icon = categoryIcon(item.category);
           const isLarge = i < 2;
           return (
             <motion.button
               key={i}
               type="button"
-              onClick={() => onShop({ ...item, thumbnail_url: thumb || null })}
+              onClick={() => onShop(item)}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className={`relative group bg-card rounded-sm overflow-hidden border border-border flex flex-col items-center justify-center text-left transition-transform active:scale-[0.98] ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
+              className={`relative group bg-muted rounded-sm overflow-hidden border border-border flex flex-col items-center justify-center gap-2 text-center transition-transform active:scale-[0.98] ${isLarge ? 'aspect-[3/4]' : 'aspect-square'}`}
             >
-              {thumb ? (
-                <img src={thumb} alt={item.name} className="w-full h-full object-contain p-2" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted">
-                  <div className="text-center space-y-1 p-3">
-                    <div className="w-8 h-8 rounded-full bg-muted-foreground/10 mx-auto flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-muted-foreground/40 animate-pulse" />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground font-medium truncate max-w-[100px]">{item.name}</p>
-                  </div>
-                </div>
-              )}
+              <Icon className="w-9 h-9 text-muted-foreground" strokeWidth={1.5} />
+              <p className="text-[11px] text-muted-foreground font-medium px-3 line-clamp-2 max-w-[130px]">{item.name}</p>
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent px-2 pt-6 pb-1.5 flex items-center justify-center gap-1.5">
                 <ShoppingBag className="w-3.5 h-3.5 text-white" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-white">Shop</span>
@@ -202,16 +192,7 @@ const AutoMatchDialog = ({ open, onOpenChange, inspirationId, inspirationImage, 
         {/* Processing */}
         {step === 'processing' && (
           <div className="flex items-center justify-center min-h-[400px] p-8">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
-              <div className="relative mx-auto w-16 h-16">
-                <Loader2 className="w-16 h-16 text-primary animate-spin" />
-                <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-              </div>
-              <div>
-                <p className="font-display text-xl font-semibold text-foreground">Styling your look...</p>
-                <p className="text-sm text-muted-foreground mt-2">Matching items from your closet</p>
-              </div>
-            </motion.div>
+            <StylingProgress title="Styling your look..." />
           </div>
         )}
 
