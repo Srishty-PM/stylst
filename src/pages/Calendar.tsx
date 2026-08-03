@@ -21,15 +21,15 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const LookTile = ({ images, size = 'sm' }: { images: string[]; size?: 'sm' | 'lg' }) => {
   const imgs = images.slice(0, 4);
-  const box = size === 'lg' ? 'w-14 h-[76px]' : 'w-10 h-[52px]';
+  const box = size === 'lg' ? 'w-16 h-20' : 'w-12 h-[58px]';
   const layout =
-    imgs.length === 1 ? '' :
-    imgs.length === 2 ? 'grid grid-rows-2' :
+    imgs.length === 1 ? 'flex items-center justify-center' :
+    imgs.length === 2 ? 'grid grid-cols-2' :
     'grid grid-cols-2 grid-rows-2';
   return (
-    <div className={`${box} rounded-sm overflow-hidden bg-muted border border-border ${layout} gap-px`}>
+    <div className={`${box} rounded-md overflow-hidden bg-muted/40 border border-border ${layout} gap-0.5 p-0.5`}>
       {imgs.map((src, i) => (
-        <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+        <img key={i} src={src} alt="" className="w-full h-full object-contain" loading="lazy" />
       ))}
     </div>
   );
