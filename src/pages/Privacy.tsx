@@ -17,7 +17,7 @@ const Privacy = () => (
 
     <main className="max-w-3xl mx-auto px-6 py-12 prose prose-neutral dark:prose-invert">
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: February 13, 2026</p>
+      <p className="text-muted-foreground">Last updated: August 13, 2026</p>
 
       <h2>1. Information We Collect</h2>
       <p>When you use Stylst, we collect:</p>
@@ -36,11 +36,11 @@ const Privacy = () => (
         <li>Send transactional emails (e.g. account verification).</li>
       </ul>
 
-      <h2>3. Data Sharing</h2>
+      <h2>3. Data Sharing and AI Processing</h2>
       <p>We do <strong>not</strong> sell your personal data. We share information only with:</p>
       <ul>
         <li>Cloud infrastructure providers that host the service.</li>
-        <li>AI model providers to process clothing analysis and styling (images are not stored by third-party AI providers beyond processing).</li>
+        <li><strong>Google (Gemini AI):</strong> to power Stylst's styling features, the photos and text you add (clothing photos, inspiration images, and style prompts) are sent to Google's Gemini AI service. Google uses this data only to process your request, that is, identifying and tagging clothing, cleaning up item images, and generating outfit suggestions, and does not use it to train its models or retain it beyond processing, in line with Google's API terms and privacy policy. We ask for your permission inside the app before any data is sent to the AI, and Google provides protections equivalent to those described in this policy. See <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">Google's Gemini API terms</a>.</li>
         <li>Law enforcement if required by applicable law.</li>
       </ul>
 

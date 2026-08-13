@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -76,6 +76,17 @@ const Onboarding = () => {
   const [editBrand, setEditBrand] = useState('');
 
   const [matches, setMatches] = useState<MatchResult[]>([]);
+
+  const [aiConsent, setAiConsent] = useState(() => {
+    try { return localStorage.getItem('stylst_ai_consent') === 'true'; } catch { return false; }
+  });
+  const toggleAiConsent = () => {
+    setAiConsent(prev => {
+      const next = !prev;
+      try { localStorage.setItem('stylst_ai_consent', String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   // Shared image helpers
   const withSizeFilter = (files: File[]) =>
@@ -318,11 +329,23 @@ const Onboarding = () => {
                     </div>
                   ))}
                 </div>
-                <div className="space-y-3">
-                  <Button className="w-full" size="lg" onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-border bg-card p-4 text-left space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      To create your outfits, Stylst sends the photos and details you add to Google's Gemini AI, which analyzes your clothing, cleans up images, and generates styling suggestions. This is used only to power the app's features. See our{' '}
+                      <Link to="/privacy" className="underline text-foreground">Privacy Policy</Link>.
+                    </p>
+                    <button type="button" onClick={toggleAiConsent} className="flex items-start gap-2 w-full text-left">
+                      <span className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${aiConsent ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                        {aiConsent && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </span>
+                      <span className="text-xs text-foreground">I agree to my photos and inputs being processed by AI as described.</span>
+                    </button>
+                  </div>
+                  <Button className="w-full" size="lg" disabled={!aiConsent} onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
                     Get Started <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors" onClick={handleFinish}>
+                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed w-full" disabled={!aiConsent} onClick={handleFinish}>
                     Skip for now
                   </button>
                 </div>
