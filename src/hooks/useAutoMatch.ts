@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureAIConsent } from '@/lib/ai-consent';
 
 export interface MissingItem {
   name: string;
@@ -48,6 +49,8 @@ export const useAutoMatch = () => {
       scheduled_date?: string;
       save_look?: boolean;
     }): Promise<AutoMatchResult> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !ensureAIConsent(user.id)) throw new Error('Allow Google Gemini processing to use AI matching.');
       const { data, error } = await supabase.functions.invoke('auto-match', {
         body: { inspiration_id, scheduled_date, save_look },
       });

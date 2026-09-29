@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CATEGORIES } from '@/lib/mock-data';
 import { isNativePicker, takePhoto, pickFromLibrary, MAX_UPLOAD_BYTES } from '@/lib/image-picker';
+import { hasAIConsent, setAIConsent, ensureAIConsent } from '@/lib/ai-consent';
 
 const VALID_CATEGORIES = CATEGORIES.filter(c => c !== 'All').map(c => c.toLowerCase());
 const COLOR_OPTIONS = ['Black','White','Gray','Navy','Blue','Red','Green','Yellow','Orange','Pink','Purple','Brown','Beige','Cream'];
@@ -78,12 +79,12 @@ const Onboarding = () => {
   const [matches, setMatches] = useState<MatchResult[]>([]);
 
   const [aiConsent, setAiConsent] = useState(() => {
-    try { return localStorage.getItem('stylst_ai_consent') === 'true'; } catch { return false; }
+    return user ? hasAIConsent(user.id) : false;
   });
   const toggleAiConsent = () => {
     setAiConsent(prev => {
       const next = !prev;
-      try { localStorage.setItem('stylst_ai_consent', String(next)); } catch { /* ignore */ }
+      if (user) setAIConsent(user.id, next);
       return next;
     });
   };
@@ -174,6 +175,7 @@ const Onboarding = () => {
 
   const handleAnalyzeCloset = async () => {
     if (!user || closetFiles.length === 0) return;
+    if (!ensureAIConsent(user.id)) return;
     setStep('processing');
 
     const items: ClosetUpload[] = closetFiles.map((file, i) => ({
@@ -261,6 +263,7 @@ const Onboarding = () => {
 
   const handleSaveAndMatch = async () => {
     if (!user) return;
+    if (!ensureAIConsent(user.id)) return;
     setClosetSaving(true);
     const ids: string[] = [];
     for (const item of closetItems) {
@@ -345,7 +348,7 @@ const Onboarding = () => {
                   <Button className="w-full" size="lg" disabled={!aiConsent} onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
                     Get Started <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed w-full" disabled={!aiConsent} onClick={handleFinish}>
+                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full" onClick={handleFinish}>
                     Skip for now
                   </button>
                 </div>
