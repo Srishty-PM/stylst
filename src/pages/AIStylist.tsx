@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureAIConsent } from '@/lib/ai-consent';
 
 const SUGGESTIONS = [
   "Create a casual weekend outfit",
@@ -18,7 +19,7 @@ const SUGGESTIONS = [
 ];
 
 const AIStylist = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
   const { data: activeInfluencers } = useActiveInfluencerStyles();
   const [prompt, setPrompt] = useState('');
@@ -29,6 +30,7 @@ const AIStylist = () => {
   const handleGenerate = async (input?: string) => {
     const text = input || prompt;
     if (!text.trim()) return;
+    if (!user || !ensureAIConsent(user.id)) return;
 
     setIsLoading(true);
     setResponse('');

@@ -14,6 +14,7 @@ import { useIsAdmin } from '@/hooks/useAdminAnalytics';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { hasAIConsent, setAIConsent, ensureAIConsent } from '@/lib/ai-consent';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -36,6 +37,7 @@ const Settings = () => {
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [savingName, setSavingName] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
+  const [aiAllowed, setAiAllowed] = useState(() => user ? hasAIConsent(user.id) : false);
 
   useEffect(() => {
     setFullName(profile?.full_name ?? '');
@@ -142,6 +144,24 @@ const Settings = () => {
               Change Password
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Integrations */}
+      <Card>
+        <CardHeader><CardTitle className="text-lg">AI data permission</CardTitle></CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">Allow clothing and inspiration photos, item details, and style prompts to be sent to Google Gemini for AI styling. <a href="/privacy" className="underline">Privacy Policy</a></p>
+          <Switch checked={aiAllowed} onCheckedChange={(allowed) => {
+            if (!user) return;
+            if (allowed) {
+              const confirmed = ensureAIConsent(user.id);
+              setAiAllowed(confirmed);
+            } else {
+              setAIConsent(user.id, false);
+              setAiAllowed(false);
+            }
+          }} aria-label="Allow Google Gemini AI processing" />
         </CardContent>
       </Card>
 

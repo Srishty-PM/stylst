@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFreemiumGates } from '@/hooks/useFreemiumGates';
 import UpgradeModal from '@/components/UpgradeModal';
 import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
+import { ensureAIConsent } from '@/lib/ai-consent';
 
 interface AnalyzedItem {
   index: number;
@@ -114,6 +115,7 @@ const AddClosetItem = () => {
       return;
     }
     if (!user || items.length === 0) return;
+    if (!ensureAIConsent(user.id)) return;
     setStep('analyzing');
 
     // Step 1: Upload all images to storage
@@ -192,6 +194,7 @@ const AddClosetItem = () => {
 
   const handleSaveAll = async () => {
     if (!user) return;
+    if (!ensureAIConsent(user.id)) return;
     setSaving(true);
     setStep('saving');
 
