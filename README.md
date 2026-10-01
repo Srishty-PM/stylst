@@ -1,73 +1,81 @@
-# Welcome to your Lovable project
+# STYLST
 
-## Project info
+**From saved to styled: an AI wardrobe and outfit-planning product.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+STYLST connects saved outfit inspiration with the clothes someone already owns. Add wardrobe items, save an inspiration image, find relevant matches, and turn the result into a look you can wear or schedule.
 
-## How can I edit this code?
+[Web app](https://stylst.shop/) · [Product story](docs/product-story.md) · [Portfolio](https://github.com/Srishty-PM/cv) · [Srishty Pahujani](https://srishtypahujani.com/)
 
-There are several ways of editing your application.
+## Why I built it
 
-**Use Lovable**
+Saving a look is easy; translating it into an outfit from your own wardrobe takes effort. The product brings inspiration, personal inventory and daily planning into one journey. It is an independent founder-and-builder project, developed with AI-assisted tooling including Lovable.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## The customer journey
 
-Changes made via Lovable will be committed automatically to this repo.
+| Stage | Implemented experience |
+| --- | --- |
+| Get started | Account creation, onboarding and an explicit AI data-permission flow. |
+| Build a wardrobe | Photograph or upload clothing, add item details and use AI analysis or image cleanup. |
+| Save inspiration | Add reference looks; optionally connect Pinterest with additional service configuration. |
+| Find an outfit | Match an inspiration look against actual wardrobe items, with missing pieces identified separately. |
+| Make it useful | Save looks, ask the AI Stylist for combinations and plan outfits in a calendar. |
+| Manage the account | Settings, AI permission withdrawal, privacy information and account deletion. |
 
-**Use your preferred IDE**
+## A five-minute tour
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Open the web app and create an account.
+2. Review the AI disclosure during onboarding. You can skip AI permission and enable it later when using an AI feature.
+3. Add a few clothing items and an inspiration image.
+4. Start matching from the inspiration view. Inspect the matched items and the pieces the wardrobe does not contain.
+5. Save a look and add it to the calendar. Explore AI Stylist and Settings.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+The authenticated flows use a configured backend. For a review without creating an account, read the [product story and code tour](docs/product-story.md).
 
-Follow these steps:
+## Product decisions worth exploring
+
+- **Wardrobe-grounded suggestions:** the stylist is prompted to use owned items; matching validates returned item IDs against the user's wardrobe.
+- **Visible gaps:** missing garments are surfaced instead of forcing a weak match.
+- **User control:** AI data permission is account-scoped on the device, can be declined, and can be withdrawn in Settings.
+- **Operating cost:** generation allowances and model fallback logic are implemented in the server functions.
+- **Measurement:** instrumentation includes signup, photo upload, match start and look-save events.
+
+## Stack and code map
+
+| Area | Technology / location |
+| --- | --- |
+| Web client | React, TypeScript, Vite, Tailwind CSS and shadcn/ui — `src/` |
+| Navigation and data | React Router and TanStack Query |
+| Authentication, storage and database | Supabase — `src/integrations/supabase/`, `supabase/migrations/` |
+| AI processing | Google Gemini through Supabase Edge Functions — `supabase/functions/` |
+| Mobile packaging | Capacitor configuration — `capacitor.config.ts` |
+| Consent and analytics | `src/lib/ai-consent.ts`, `src/hooks/useAnalytics.ts` |
+
+## Run locally
+
+Use a current Node.js installation with npm. The npm lockfile is checked in.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+git clone https://github.com/Srishty-PM/stylst.git
+cd stylst
+npm ci
+cp .env.example .env.local
+# Fill .env.local with your own Supabase project settings.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The development server is configured for `http://localhost:8080`. A full working copy needs its own Supabase database, storage setup, authentication configuration and deployed Edge Functions; frontend installation alone does not provision these services. See [development notes](docs/development.md).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run build
+npm run preview
+npm run lint
+npm run test
+```
 
-**Use GitHub Codespaces**
+## Current scope
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This repository contains the web application and Capacitor configuration. Native iOS and Android projects are not checked in, and this README does not imply an approved App Store release. [App Store resubmission notes](docs/app-store-resubmission.md) track the separate release work.
 
-## What technologies are used for this project?
+Shopping suggestions are model-generated search recommendations rather than a verified live retailer inventory feed. Subscription UI and generation limits should not be treated as evidence of a complete paid billing system. Proposed product metrics and validation questions are in the [product story](docs/product-story.md).
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Built by **Srishty Pahujani** · [Website](https://srishtypahujani.com/) · [LinkedIn](https://www.linkedin.com/in/srishtypahujani/)
