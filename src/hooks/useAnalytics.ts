@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Json } from '@/integrations/supabase/types';
 
 // Generate a stable device ID (persisted in localStorage)
 function getDeviceId(): string {
@@ -34,7 +35,10 @@ type EventType =
   | 'photo_uploaded'
   | 'step_completed'
   | 'match_started'
-  | 'look_saved';
+  | 'look_saved'
+  | 'shop_product_viewed'
+  | 'shop_product_saved'
+  | 'shop_retailer_clicked';
 
 const deviceId = getDeviceId();
 const sessionId = getSessionId();
@@ -88,7 +92,7 @@ export function useAnalytics() {
           device_id: deviceId,
           session_id: sessionId,
           event_type: eventType,
-          event_data: (eventData ?? {}) as any,
+          event_data: (eventData ?? {}) as Json,
           page_path: window.location.pathname,
         }])
         .then(() => {});

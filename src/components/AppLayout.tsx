@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, ShirtIcon, Layers, Heart, CalendarDays, Sparkles, Settings, LogOut } from 'lucide-react';
+import { Home, ShirtIcon, Layers, Heart, CalendarDays, ShoppingBag, Sparkles, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +9,7 @@ const bottomNavItems = [
   { to: '/closet', icon: ShirtIcon, label: 'Closet' },
   { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
   { to: '/looks', icon: Heart, label: 'Looks' },
+  { to: '/shop', icon: ShoppingBag, label: 'Shop' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
 ];
 
@@ -105,9 +106,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           {bottomNavItems.map(item => {
             const isActive = location.pathname.startsWith(item.to);
             return (
-              <NavLink key={item.to} to={item.to} className="flex flex-col items-center gap-0.5 py-1 px-3">
+              <NavLink key={item.to} to={item.to} className="flex flex-1 min-w-0 flex-col items-center gap-0.5 py-1 px-1">
                 <item.icon className={cn('w-6 h-6 transition-colors duration-200', isActive ? 'text-primary' : 'text-muted-foreground')} strokeWidth={1.5} />
-                <span className={cn('text-[10px] font-medium tracking-widest uppercase', isActive ? 'text-primary' : 'text-muted-foreground')}>
+                <span className={cn('text-[9px] font-medium tracking-wide uppercase', isActive ? 'text-primary' : 'text-muted-foreground')}>
                   {item.label}
                 </span>
               </NavLink>

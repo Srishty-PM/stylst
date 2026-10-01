@@ -30,6 +30,7 @@ const Looks = lazy(() => import("@/pages/Looks"));
 const LookDetail = lazy(() => import("@/pages/looks/LookDetail"));
 const AIStylist = lazy(() => import("@/pages/AIStylist"));
 const Calendar = lazy(() => import("@/pages/Calendar"));
+const Shop = lazy(() => import("@/pages/Shop"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
 const InfluencerStyles = lazy(() => import("@/pages/influencer-styles/InfluencerStyles"));
@@ -105,6 +106,7 @@ const AppRoutes = () => (
     <Route path="/looks/:lookId" element={<ProtectedRoute><LookDetail /></ProtectedRoute>} />
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+    <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     <Route path="/settings/influencer-styles" element={<ProtectedRoute><InfluencerStyles /></ProtectedRoute>} />

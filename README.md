@@ -19,6 +19,7 @@ Saving a look is easy; translating it into an outfit from your own wardrobe take
 | Save inspiration | Add reference looks; optionally connect Pinterest with additional service configuration. |
 | Find an outfit | Match an inspiration look against actual wardrobe items, with missing pieces identified separately. |
 | Make it useful | Save looks, ask the AI Stylist for combinations and plan outfits in a calendar. |
+| Complete the look | Browse retailer products in Shop or from a missing piece, view details, set a budget and save favourites on the device. Retailer purchase links support affiliate attribution. |
 | Manage the account | Settings, AI permission withdrawal, privacy information and account deletion. |
 
 ## A five-minute tour
@@ -76,6 +77,8 @@ npm run test
 
 This repository contains the web application and Capacitor configuration. Native iOS and Android projects are not checked in, and this README does not imply an approved App Store release. [App Store resubmission notes](docs/app-store-resubmission.md) track the separate release work.
 
-Shopping suggestions are model-generated search recommendations rather than a verified live retailer inventory feed. Subscription UI and generation limits should not be treated as evidence of a complete paid billing system. Proposed product metrics and validation questions are in the [product story](docs/product-story.md).
+The Shop uses an approved retailer-feed catalogue and includes an importer for Awin CSV and normalized JSON. The checked-in catalogue is intentionally empty until a retailer partnership and current product feed are connected. Product details stay inside STYLST; purchases are completed with the retailer (in a system browser overlay on native iOS/Android, a new tab on web). STYLST does not operate a multi-retailer checkout or claim that commission is already active. See [affiliate shop setup](docs/affiliate-shopping.md).
+
+Subscription UI and generation limits should not be treated as evidence of a complete paid billing system. Proposed product metrics and validation questions are in the [product story](docs/product-story.md).
 
 Built by **Srishty Pahujani** · [Website](https://srishtypahujani.com/) · [LinkedIn](https://www.linkedin.com/in/srishtypahujani/)

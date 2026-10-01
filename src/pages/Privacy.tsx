@@ -17,7 +17,7 @@ const Privacy = () => (
 
     <main className="max-w-3xl mx-auto px-6 py-12 prose prose-neutral dark:prose-invert">
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: August 13, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 1, 2026</p>
 
       <h2>1. Information We Collect</h2>
       <p>When you use Stylst, we collect:</p>
@@ -26,6 +26,7 @@ const Privacy = () => (
         <li><strong>Closet data:</strong> photos and metadata of clothing items you upload.</li>
         <li><strong>Third-party integrations:</strong> if you connect Pinterest, we access your fashion boards and pins (read-only) to import inspiration images. We store an OAuth access token securely and never access content outside the scopes you authorize (<code>boards:read</code>, <code>pins:read</code>).</li>
         <li><strong>Usage data:</strong> pages visited, features used, and general interaction patterns to improve the service.</li>
+        <li><strong>Shopping activity:</strong> product views, saves and retailer-link clicks are recorded in our usage analytics. Saved product IDs are stored on your device and kept separate for each signed-in account.</li>
       </ul>
 
       <h2>2. How We Use Your Information</h2>
@@ -43,6 +44,7 @@ const Privacy = () => (
         <li><strong>Google (Gemini AI):</strong> with your in-app permission, the photos and text you add (clothing photos, inspiration images, item details, and style prompts) are sent through our service to Google's Gemini AI to identify and tag clothing, clean up item images, and generate outfit suggestions. You can withdraw permission in Settings; AI features will then ask again before processing. See <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">Google's Gemini API terms</a> for Google's handling of data.</li>
         <li>Law enforcement if required by applicable law.</li>
       </ul>
+      <p><strong>Retailer and affiliate links:</strong> opening a shopping link takes you to the retailer, sometimes through an affiliate network that attributes the referral. The retailer and network handle that visit under their own privacy policies. STYLST does not include your account ID, email, wardrobe photos or style prompts in these links, and does not collect payment or delivery details for retailer purchases.</p>
 
       <h2>4. Pinterest Data</h2>
       <p>If you connect your Pinterest account:</p>

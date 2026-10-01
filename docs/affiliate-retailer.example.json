@@ -1,0 +1,11 @@
+{
+  "id": "replace-with-retailer-id",
+  "name": "Replace with approved retailer name",
+  "currency": "GBP",
+  "productHosts": ["www.example.com"],
+  "affiliateHosts": ["www.awin1.com"],
+  "merchantId": "replace-with-approved-merchant-id",
+  "categoryMapping": {
+    "Replace with exact feed category": "tops"
+  }
+}

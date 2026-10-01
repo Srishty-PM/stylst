@@ -33,3 +33,7 @@ temp_interactive_push.bat
 .env.*
 !.env.example
 
+# Python feed-importer caches
+__pycache__/
+*.pyc
+
