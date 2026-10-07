@@ -48,7 +48,7 @@ The authenticated flows use a configured backend. For a review without creating 
 | Navigation and data | React Router and TanStack Query |
 | Authentication, storage and database | Supabase — `src/integrations/supabase/`, `supabase/migrations/` |
 | AI processing | Google Gemini through Supabase Edge Functions — `supabase/functions/` |
-| Mobile packaging | Capacitor configuration — `capacitor.config.ts` |
+| Mobile packaging | Capacitor 8, native SwiftPM/Xcode project — `capacitor.config.ts`, `ios/` |
 | Consent and analytics | `src/lib/ai-consent.ts`, `src/hooks/useAnalytics.ts` |
 
 ## Run locally
@@ -75,7 +75,7 @@ npm run test
 
 ## Current scope
 
-This repository contains the web application and Capacitor configuration. Native iOS and Android projects are not checked in, and this README does not imply an approved App Store release. [App Store resubmission notes](docs/app-store-resubmission.md) track the separate release work.
+This repository contains the web application and a reproducible native iOS project. Run `npm run ios:sync` to build and bundle the latest app; the GitHub Actions iOS validation workflow compiles and launches it on a Mac runner. The manual App Store workflow requires owner-controlled signing credentials. An approved App Store release remains a separate step. See [iOS release instructions](docs/ios-release.md) and [App Store resubmission notes](docs/app-store-resubmission.md). The Android native project is not checked in.
 
 The Shop uses an approved retailer-feed catalogue and includes an importer for Awin CSV and normalized JSON. The checked-in catalogue is intentionally empty until a retailer partnership and current product feed are connected. Product details stay inside STYLST; purchases are completed with the retailer (in a system browser overlay on native iOS/Android, a new tab on web). STYLST does not operate a multi-retailer checkout or claim that commission is already active. See [affiliate shop setup](docs/affiliate-shopping.md).
 

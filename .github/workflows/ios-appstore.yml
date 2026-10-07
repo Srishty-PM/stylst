@@ -1,0 +1,57 @@
+name: iOS App Store upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'Unused App Store build number (must be 4 or higher)'
+        required: true
+        default: '4'
+      upload:
+        description: 'Upload the signed archive to App Store Connect'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-appstore
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm run ios:sync
+      - name: Sign, archive, and optionally upload
+        env:
+          IOS_BUILD_NUMBER: ${{ inputs.build_number }}
+          IOS_UPLOAD: ${{ inputs.upload }}
+          GEMINI_PAID_SERVICES_VERIFIED: ${{ vars.GEMINI_PAID_SERVICES_VERIFIED }}
+          IOS_DISTRIBUTION_P12: ${{ secrets.IOS_DISTRIBUTION_P12 }}
+          IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          IOS_APPSTORE_PROFILE: ${{ secrets.IOS_APPSTORE_PROFILE }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: bash scripts/ios_release.sh
+      - name: Save signed app (never signing credentials)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stylst-ios-${{ inputs.build_number }}
+          path: ios/output/*.ipa
+          retention-days: 7
+          if-no-files-found: error

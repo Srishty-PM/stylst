@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFreemiumGates } from '@/hooks/useFreemiumGates';
 import UpgradeModal from '@/components/UpgradeModal';
 import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
-import { ensureAIConsent } from '@/lib/ai-consent';
+import { ensureAIConsent, runAIRequest } from '@/lib/ai-consent';
 
 interface AnalyzedItem {
   index: number;
@@ -115,7 +115,7 @@ const AddClosetItem = () => {
       return;
     }
     if (!user || items.length === 0) return;
-    if (!ensureAIConsent(user.id)) return;
+    if (!await ensureAIConsent(user.id)) return;
     setStep('analyzing');
 
     // Step 1: Upload all images to storage
@@ -144,9 +144,9 @@ const AddClosetItem = () => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-clothing', {
+      const { data, error } = await runAIRequest(user.id, () => supabase.functions.invoke('analyze-clothing', {
         body: { image_urls: imageUrls },
-      });
+      }));
 
       if (error) throw error;
 
@@ -194,7 +194,7 @@ const AddClosetItem = () => {
 
   const handleSaveAll = async () => {
     if (!user) return;
-    if (!ensureAIConsent(user.id)) return;
+    if (!await ensureAIConsent(user.id)) return;
     setSaving(true);
     setStep('saving');
 
@@ -209,9 +209,9 @@ const AddClosetItem = () => {
 
       // Step 3: Background removal
       try {
-        const { data: cleanData, error: cleanError } = await supabase.functions.invoke('remove-background', {
+        const { data: cleanData, error: cleanError } = await runAIRequest(user.id, () => supabase.functions.invoke('remove-background', {
           body: { image_url: finalUrl },
-        });
+        }));
         if (!cleanError && cleanData?.cleaned_url) {
           finalUrl = cleanData.cleaned_url;
         }

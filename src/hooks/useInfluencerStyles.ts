@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ensureAIConsent } from '@/lib/ai-consent';
+import { ensureAIConsent, runAIRequest } from '@/lib/ai-consent';
 
 export interface StyleProfile {
   aesthetic: string;
@@ -127,9 +127,9 @@ export const useGenerateInfluencerStyle = () => {
   return useMutation({
     mutationFn: async ({ influencer_name, instagram_handle }: { influencer_name: string; instagram_handle?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !ensureAIConsent(user.id)) throw new Error('Allow Google Gemini processing to use this AI feature.');
+      if (!user || !await ensureAIConsent(user.id)) throw new Error('Allow Google Gemini processing to use this AI feature.');
       const { data: { session } } = await supabase.auth.getSession();
-      const resp = await fetch(
+      const resp = await runAIRequest(user.id, () => fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-influencer-style`,
         {
           method: 'POST',
@@ -139,7 +139,7 @@ export const useGenerateInfluencerStyle = () => {
           },
           body: JSON.stringify({ influencer_name, instagram_handle }),
         }
-      );
+      ));
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: 'Request failed' }));
         throw new Error(err.error || `Error ${resp.status}`);

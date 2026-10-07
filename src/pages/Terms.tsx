@@ -17,12 +17,12 @@ const Terms = () => (
 
     <main className="max-w-3xl mx-auto px-6 py-12 prose prose-neutral dark:prose-invert">
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground">Last updated: October 1, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 7, 2026</p>
 
       <p>These Terms of Service ("Terms") govern your access to and use of the Stylst app and website (the "Service"). By creating an account or using the Service, you agree to these Terms. If you do not agree, please do not use the Service.</p>
 
       <h2>1. Eligibility</h2>
-      <p>You must be at least 16 years old, or the age of digital consent in your country, to use Stylst. By using the Service you confirm that you meet this requirement.</p>
+      <p>Stylst is intended for adults aged 18 or older. You must be at least 18 to create an account or use the Service. AI processing also requires your separate, explicit permission in the app.</p>
 
       <h2>2. Your Account</h2>
       <p>You are responsible for the information you provide and for keeping your login credentials secure. You are responsible for all activity that happens under your account. Let us know promptly if you believe your account has been compromised.</p>
