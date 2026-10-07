@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 # This script runs only on the ephemeral macOS runner. Keep credentials out of
 # source, console output, build products, and uploaded artifacts.
@@ -57,7 +58,19 @@ keychain_password=$(openssl rand -base64 32)
 security create-keychain -p "$keychain_password" "$keychain_path"
 security set-keychain-settings -lut 21600 "$keychain_path"
 security unlock-keychain -p "$keychain_password" "$keychain_path"
-security import "$signing_dir/certificate.p12" -k "$keychain_path" -P "$IOS_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+# Apple's Keychain importer rejects the PBES2/SHA-256 encoding produced by
+# modern OpenSSL. Keep that original password-protected GitHub secret intact;
+# convert a private, temporary copy to the encoding Keychain accepts. All key
+# material stays in the runner's restricted signing directory and is removed.
+openssl_bin=$(command -v openssl)
+if [[ -x /opt/homebrew/opt/openssl@3/bin/openssl ]]; then
+  openssl_bin=/opt/homebrew/opt/openssl@3/bin/openssl
+fi
+"$openssl_bin" pkcs12 -in "$signing_dir/certificate.p12" -passin env:IOS_P12_PASSWORD -nodes -out "$signing_dir/identity.pem"
+"$openssl_bin" pkcs12 -export -in "$signing_dir/identity.pem" -out "$signing_dir/keychain.p12" -passout env:IOS_P12_PASSWORD -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1
+rm -f "$signing_dir/identity.pem"
+security import "$signing_dir/keychain.p12" -k "$keychain_path" -P "$IOS_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+rm -f "$signing_dir/keychain.p12"
 security list-keychains -d user -s "$keychain_path" "$HOME/Library/Keychains/login.keychain-db"
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path" >/dev/null
 
