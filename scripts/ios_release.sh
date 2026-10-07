@@ -74,9 +74,26 @@ rm -f "$signing_dir/keychain.p12"
 security list-keychains -d user -s "$keychain_path" "$HOME/Library/Keychains/login.keychain-db"
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path" >/dev/null
 
-xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath ios/output/Stylst.xcarchive CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" DEVELOPMENT_TEAM=C58275KM48 CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution' PROVISIONING_PROFILE_SPECIFIER="$profile_uuid" OTHER_CODE_SIGN_FLAGS="--keychain $keychain_path" archive
-
 export STYLST_PROFILE_UUID="$profile_uuid"
+# Set the profile only on App's Release configuration. Passing it as a global
+# xcodebuild override also assigns it to Swift package libraries and resources,
+# which cannot use an app provisioning profile. This edit is runner-local.
+python3 - <<'PY'
+import os, re, uuid
+from pathlib import Path
+profile = str(uuid.UUID(os.environ['STYLST_PROFILE_UUID']))
+project = Path('ios/App/App.xcodeproj/project.pbxproj')
+text = project.read_text()
+match = re.search(r'(\t\t504EC3181FED79650016851F /\* Release \*/ = \{\n)(.*?)(\n\t\t\};)', text, re.S)
+assert match, 'App Release configuration changed; update its signing selection'
+settings = match.group(2)
+assert 'PRODUCT_BUNDLE_IDENTIFIER = shop.stylst.app;' in settings
+assert settings.count('CODE_SIGN_STYLE = Automatic;') == 1
+settings = settings.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "' + profile + '";')
+project.write_text(text[:match.start(2)] + settings + text[match.end(2):])
+PY
+xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath ios/output/Stylst.xcarchive CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" DEVELOPMENT_TEAM=C58275KM48 CODE_SIGN_IDENTITY='Apple Distribution' OTHER_CODE_SIGN_FLAGS="--keychain $keychain_path" archive
+
 python3 - <<'PY'
 import os, plistlib
 from pathlib import Path
