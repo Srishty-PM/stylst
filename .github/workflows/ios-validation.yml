@@ -3,7 +3,7 @@ name: iOS validation
 on:
   push:
     branches: [main, 'ios-resubmission-*']
-    paths: ['src/**', 'public/**', 'ios/**', 'scripts/check_ios.py', 'package*.json', 'capacitor.config.ts', 'vite.config.ts', 'vitest.config.ts', 'tsconfig*.json', '.github/workflows/ios-*.yml']
+    paths: ['src/**', 'public/**', 'ios/**', 'scripts/check_ios.py', 'scripts/check_ios_launch.py', 'package*.json', 'capacitor.config.ts', 'vite.config.ts', 'vitest.config.ts', 'tsconfig*.json', '.github/workflows/ios-*.yml']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -45,11 +45,22 @@ jobs:
           simulator_id=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for group in devices.values() for d in group if d["name"].startswith("iPhone") and d["isAvailable"]))')
           xcrun simctl boot "$simulator_id"
           xcrun simctl bootstatus "$simulator_id" -b
+          finish() {
+            xcrun simctl spawn "$simulator_id" log show --last 5m --style compact --predicate 'process == "App"' > ios-runtime.log 2>&1 || true
+            xcrun simctl shutdown "$simulator_id" || true
+          }
+          trap finish EXIT
           xcrun simctl install "$simulator_id" ios/DerivedData/Build/Products/Release-iphonesimulator/App.app
           xcrun simctl launch "$simulator_id" shop.stylst.app
-          sleep 5
-          xcrun simctl io "$simulator_id" screenshot ios-launch.png
-          xcrun simctl shutdown "$simulator_id"
+          for attempt in {1..8}; do
+            sleep 10
+            xcrun simctl io "$simulator_id" screenshot ios-launch.png
+            if python3 scripts/check_ios_launch.py ios-launch.png; then
+              exit 0
+            fi
+          done
+          echo 'STYLST remained blank after waiting for native startup.' >&2
+          exit 1
       - name: Save native build evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -58,5 +69,6 @@ jobs:
           path: |
             ios-build.log
             ios-launch.png
+            ios-runtime.log
           retention-days: 14
           if-no-files-found: ignore
