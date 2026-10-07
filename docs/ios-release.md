@@ -84,8 +84,9 @@ generated `docs/privacy-policy.md` is also a public reviewable copy in GitHub.
    version 1.0. Never resubmit the rejected build 3 as the code replacement.
 4. Test the demo account and the consent flows on iPhone and iPad. Verify decline,
    permission grant, withdrawal, camera/library prompts, and account deletion.
-5. Update the privacy URL and App Privacy answers to match the collected data in
-   `PrivacyInfo.xcprivacy`. Replace the former developer's review contact with a
+5. Update the privacy URL and App Privacy answers using the prepared
+   [privacy entries](app-store-privacy-answers.md) and `PrivacyInfo.xcprivacy`.
+   Replace the former developer's review contact with a
    contact the owner controls. Keep review credentials out of this repository.
 6. Provide the consent test instructions and submit the new build for review.
 
