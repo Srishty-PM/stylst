@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAnalytics, usePageView } from '@/hooks/useAnalytics';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CATEGORIES } from '@/lib/mock-data';
 import { isNativePicker, takePhoto, pickFromLibrary, MAX_UPLOAD_BYTES } from '@/lib/image-picker';
-import { hasAIConsent, setAIConsent, ensureAIConsent } from '@/lib/ai-consent';
+import { hasAIConsent, setAIConsent, ensureAIConsent, runAIRequest, AI_DATA_DESCRIPTION } from '@/lib/ai-consent';
 
 const VALID_CATEGORIES = CATEGORIES.filter(c => c !== 'All').map(c => c.toLowerCase());
 const COLOR_OPTIONS = ['Black','White','Gray','Navy','Blue','Red','Green','Yellow','Orange','Pink','Purple','Brown','Beige','Cream'];
@@ -81,12 +81,14 @@ const Onboarding = () => {
   const [aiConsent, setAiConsent] = useState(() => {
     return user ? hasAIConsent(user.id) : false;
   });
+  useEffect(() => {
+    setAiConsent(user ? hasAIConsent(user.id) : false);
+  }, [user?.id]);
   const toggleAiConsent = () => {
-    setAiConsent(prev => {
-      const next = !prev;
-      if (user) setAIConsent(user.id, next);
-      return next;
-    });
+    if (!user) return;
+    const next = !aiConsent;
+    const saved = setAIConsent(user.id, next);
+    setAiConsent(next && saved);
   };
 
   // Shared image helpers
@@ -175,7 +177,7 @@ const Onboarding = () => {
 
   const handleAnalyzeCloset = async () => {
     if (!user || closetFiles.length === 0) return;
-    if (!ensureAIConsent(user.id)) return;
+    if (!await ensureAIConsent(user.id)) return;
     setStep('processing');
 
     const items: ClosetUpload[] = closetFiles.map((file, i) => ({
@@ -196,7 +198,7 @@ const Onboarding = () => {
     const urls = updated.filter(i => i.imageUrl && i.status !== 'error').map(i => i.imageUrl!);
     if (urls.length > 0) {
       try {
-        const { data } = await supabase.functions.invoke('analyze-clothing', { body: { image_urls: urls } });
+        const { data } = await runAIRequest(user.id, () => supabase.functions.invoke('analyze-clothing', { body: { image_urls: urls } }));
         const results = data?.results || [];
         let urlIdx = 0;
         for (let i = 0; i < updated.length; i++) {
@@ -263,14 +265,14 @@ const Onboarding = () => {
 
   const handleSaveAndMatch = async () => {
     if (!user) return;
-    if (!ensureAIConsent(user.id)) return;
+    if (!await ensureAIConsent(user.id)) return;
     setClosetSaving(true);
     const ids: string[] = [];
     for (const item of closetItems) {
       if (item.status !== 'ready') continue;
       let finalUrl = item.imageUrl!;
       try {
-        const { data } = await supabase.functions.invoke('remove-background', { body: { image_url: finalUrl } });
+        const { data } = await runAIRequest(user.id, () => supabase.functions.invoke('remove-background', { body: { image_url: finalUrl } }));
         if (data?.cleaned_url) finalUrl = data.cleaned_url;
       } catch {}
       try {
@@ -285,7 +287,7 @@ const Onboarding = () => {
       const allMatches: MatchResult[] = [];
       for (const inspo of uploadedInspoIds.slice(0, 5)) {
         try {
-          const { data } = await supabase.functions.invoke('auto-match', { body: { inspiration_id: inspo.id, user_id: user.id } });
+          const { data } = await runAIRequest(user.id, () => supabase.functions.invoke('auto-match', { body: { inspiration_id: inspo.id, user_id: user.id } }));
           if (data?.look) allMatches.push({ lookName: data.look.name, occasion: data.look.occasion||'', itemIds: data.look.closet_item_ids||[], itemNames: data.look.item_names||[], inspirationId: inspo.id, reasoning: data.look.reasoning||'' });
         } catch (err) { console.error('Match error:', err); }
       }
@@ -335,14 +337,14 @@ const Onboarding = () => {
                 <div className="space-y-4">
                   <div className="rounded-lg border border-border bg-card p-4 text-left space-y-3">
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      To create your outfits, Stylst sends the photos and details you add to Google's Gemini AI, which analyzes your clothing, cleans up images, and generates styling suggestions. This is used only to power the app's features. See our{' '}
+                      <strong>Data sent to Google Gemini:</strong> {AI_DATA_DESCRIPTION}. Google's AI processes this data to identify clothing, clean up images, match outfits, and suggest styles. Permission applies to this account on this device. You can withdraw it in Settings to stop new requests, or skip setup and continue without AI. See our{' '}
                       <Link to="/privacy" className="underline text-foreground">Privacy Policy</Link>.
                     </p>
-                    <button type="button" onClick={toggleAiConsent} className="flex items-start gap-2 w-full text-left">
+                    <button type="button" role="checkbox" aria-checked={aiConsent} onClick={toggleAiConsent} className="flex items-start gap-2 w-full text-left">
                       <span className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${aiConsent ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
                         {aiConsent && <Check className="w-3 h-3 text-primary-foreground" />}
                       </span>
-                      <span className="text-xs text-foreground">I agree to my photos and inputs being processed by AI as described.</span>
+                      <span className="text-xs text-foreground">I am 18 or older and allow Google Gemini to process the data described above.</span>
                     </button>
                   </div>
                   <Button className="w-full" size="lg" disabled={!aiConsent} onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>

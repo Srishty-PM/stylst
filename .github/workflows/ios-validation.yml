@@ -1,0 +1,62 @@
+name: iOS validation
+
+on:
+  push:
+    branches: [main, 'ios-resubmission-*']
+    paths: ['src/**', 'public/**', 'ios/**', 'scripts/check_ios.py', 'package*.json', 'capacitor.config.ts', 'vite.config.ts', 'vitest.config.ts', 'tsconfig*.json', '.github/workflows/ios-*.yml']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Tests and native iPhone build
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify Xcode version
+        run: |
+          xcodebuild -version
+          python3 -c 'import subprocess; v=subprocess.check_output(["xcodebuild","-version"],text=True).split()[1]; assert int(v.split(".")[0]) >= 26, "Xcode 26 or newer is required"'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm run ios:sync
+      - name: Compile native iOS app
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build | tee ios-build.log
+      - name: Launch on iPhone simulator
+        run: |
+          simulator_id=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for group in devices.values() for d in group if d["name"].startswith("iPhone") and d["isAvailable"]))')
+          xcrun simctl boot "$simulator_id"
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" ios/DerivedData/Build/Products/Release-iphonesimulator/App.app
+          xcrun simctl launch "$simulator_id" shop.stylst.app
+          sleep 5
+          xcrun simctl io "$simulator_id" screenshot ios-launch.png
+          xcrun simctl shutdown "$simulator_id"
+      - name: Save native build evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-validation-${{ github.sha }}
+          path: |
+            ios-build.log
+            ios-launch.png
+          retention-days: 14
+          if-no-files-found: ignore

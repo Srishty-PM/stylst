@@ -14,7 +14,8 @@ import { useIsAdmin } from '@/hooks/useAdminAnalytics';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { hasAIConsent, setAIConsent, ensureAIConsent } from '@/lib/ai-consent';
+import { authRedirect } from '@/lib/auth-redirect';
+import { hasAIConsent, setAIConsent, ensureAIConsent, AI_DATA_DESCRIPTION } from '@/lib/ai-consent';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -38,6 +39,10 @@ const Settings = () => {
   const [savingName, setSavingName] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [aiAllowed, setAiAllowed] = useState(() => user ? hasAIConsent(user.id) : false);
+
+  useEffect(() => {
+    setAiAllowed(user ? hasAIConsent(user.id) : false);
+  }, [user?.id]);
 
   useEffect(() => {
     setFullName(profile?.full_name ?? '');
@@ -65,7 +70,7 @@ const Settings = () => {
     setSendingReset(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: authRedirect('/auth/reset-password'),
       });
       if (error) throw error;
       toast({ title: 'Check your inbox', description: 'We sent you a link to reset your password.' });
@@ -151,15 +156,16 @@ const Settings = () => {
       <Card>
         <CardHeader><CardTitle className="text-lg">AI data permission</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">Allow clothing and inspiration photos, item details, and style prompts to be sent to Google Gemini for AI styling. <a href="/privacy" className="underline">Privacy Policy</a></p>
-          <Switch checked={aiAllowed} onCheckedChange={(allowed) => {
+          <p className="text-sm text-muted-foreground">{AI_DATA_DESCRIPTION} may be sent to Google Gemini for clothing analysis and AI styling when you allow processing. Turning this off stops new AI requests. <a href="/privacy" className="underline">Privacy Policy</a></p>
+          <Switch checked={aiAllowed} onCheckedChange={async (allowed) => {
             if (!user) return;
             if (allowed) {
-              const confirmed = ensureAIConsent(user.id);
+              const confirmed = await ensureAIConsent(user.id);
               setAiAllowed(confirmed);
             } else {
-              setAIConsent(user.id, false);
+              const saved = setAIConsent(user.id, false);
               setAiAllowed(false);
+              if (!saved) toast({ title: 'AI permission is off for this session', description: 'Could not save this preference. Check it again after restarting the app.', variant: 'destructive' });
             }
           }} aria-label="Allow Google Gemini AI processing" />
         </CardContent>

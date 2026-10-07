@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
 import { supabase } from '@/integrations/supabase/client';
-import { ensureAIConsent } from '@/lib/ai-consent';
+import { ensureAIConsent, runAIRequest } from '@/lib/ai-consent';
 
 const SUGGESTIONS = [
   "Create a casual weekend outfit",
@@ -30,7 +30,7 @@ const AIStylist = () => {
   const handleGenerate = async (input?: string) => {
     const text = input || prompt;
     if (!text.trim()) return;
-    if (!user || !ensureAIConsent(user.id)) return;
+    if (!user || !await ensureAIConsent(user.id)) return;
 
     setIsLoading(true);
     setResponse('');
@@ -38,7 +38,7 @@ const AIStylist = () => {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const resp = await fetch(
+      const resp = await runAIRequest(user.id, () => fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-stylist`,
         {
           method: 'POST',
@@ -50,7 +50,7 @@ const AIStylist = () => {
           body: JSON.stringify({ prompt: text }),
           signal: abortRef.current.signal,
         }
-      );
+      ));
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: 'Request failed' }));
