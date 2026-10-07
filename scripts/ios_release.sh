@@ -75,9 +75,9 @@ security list-keychains -d user -s "$keychain_path" "$HOME/Library/Keychains/log
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path" >/dev/null
 
 export STYLST_PROFILE_UUID="$profile_uuid"
-# Set the profile only on App's Release configuration. Passing it as a global
-# xcodebuild override also assigns it to Swift package libraries and resources,
-# which cannot use an app provisioning profile. This edit is runner-local.
+# Set the distribution identity and profile only on App's Release configuration.
+# Global signing overrides conflict with Swift package libraries and resources,
+# which do not use the app's distribution profile. This edit is runner-local.
 python3 - <<'PY'
 import os, re, uuid
 from pathlib import Path
@@ -89,10 +89,10 @@ assert match, 'App Release configuration changed; update its signing selection'
 settings = match.group(2)
 assert 'PRODUCT_BUNDLE_IDENTIFIER = shop.stylst.app;' in settings
 assert settings.count('CODE_SIGN_STYLE = Automatic;') == 1
-settings = settings.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "' + profile + '";')
+settings = settings.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "' + profile + '";')
 project.write_text(text[:match.start(2)] + settings + text[match.end(2):])
 PY
-xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath ios/output/Stylst.xcarchive CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" DEVELOPMENT_TEAM=C58275KM48 CODE_SIGN_IDENTITY='Apple Distribution' OTHER_CODE_SIGN_FLAGS="--keychain $keychain_path" archive
+xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath ios/output/Stylst.xcarchive CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" OTHER_CODE_SIGN_FLAGS="--keychain $keychain_path" archive
 
 python3 - <<'PY'
 import os, plistlib
