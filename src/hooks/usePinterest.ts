@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { PinterestSyncResult } from '@/lib/pinterest-sync-result';
 
 export const usePinterestConnect = () => {
   const [loading, setLoading] = useState(false);
@@ -87,7 +88,7 @@ export const useSyncPinterestBoard = () => {
       });
       if (res.error) throw res.error;
       queryClient.invalidateQueries({ queryKey: ['inspirations'] });
-      return res.data as { synced: number; total_pins: number };
+      return res.data as PinterestSyncResult;
     } finally {
       setSyncing(false);
     }

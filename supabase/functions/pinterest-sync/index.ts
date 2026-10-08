@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
     const pins = pinsData.items || [];
 
     // Upsert an inspiration_source for this board
-    const { data: source } = await supabaseAdmin
+    const { data: source, error: sourceError } = await supabaseAdmin
       .from("inspiration_sources")
       .upsert(
         {
@@ -184,8 +184,15 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
+    if (sourceError || !source) {
+      throw new Error(`Could not save Pinterest board: ${sourceError?.message || "Unknown error"}`);
+    }
+
     // Save pins as inspirations (skip duplicates by checking source_url)
     let synced = 0;
+    let skipped = 0;
+    let failed = 0;
+    const importablePinUrls: string[] = [];
     for (const pin of pins) {
       const imageUrl =
         pin.media?.images?.["1200x"]?.url ||
@@ -194,30 +201,65 @@ Deno.serve(async (req) => {
       if (!imageUrl) continue;
 
       const pinUrl = `https://www.pinterest.com/pin/${pin.id}/`;
+      importablePinUrls.push(pinUrl);
 
       // Check if already saved
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingError } = await supabaseAdmin
         .from("inspiration")
         .select("id")
         .eq("user_id", user.id)
         .eq("source_url", pinUrl)
         .maybeSingle();
 
-      if (existing) continue;
+      if (existingError) {
+        throw new Error(`Could not check Pinterest Pin ${pin.id}: ${existingError.message}`);
+      }
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
 
       const hostedUrl = await rehostPinImage(supabaseAdmin, user.id, pin.id, imageUrl);
 
-      await supabaseAdmin.from("inspiration").insert({
+      const { error: insertError } = await supabaseAdmin.from("inspiration").insert({
         user_id: user.id,
         image_url: hostedUrl,
         source_url: pinUrl,
         source_id: source?.id || null,
         description: pin.description || pin.title || null,
       });
+
+      if (insertError) {
+        failed++;
+        console.error(`Pinterest Pin ${pin.id} insert failed:`, insertError.message);
+        continue;
+      }
       synced++;
     }
 
-    return new Response(JSON.stringify({ synced, total_pins: pins.length }), {
+    let available = synced + skipped;
+    if (importablePinUrls.length > 0) {
+      const { count, error: countError } = await supabaseAdmin
+        .from("inspiration")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .in("source_url", importablePinUrls);
+
+      if (countError) {
+        console.error("Could not verify available Pinterest Pins:", countError.message);
+      } else if (typeof count === "number") {
+        available = count;
+      }
+    }
+
+    return new Response(JSON.stringify({
+      synced,
+      skipped,
+      failed,
+      available,
+      total_pins: pins.length,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

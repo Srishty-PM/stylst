@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
 import { usePinterestConnect, usePinterestBoards, useSyncPinterestBoard } from '@/hooks/usePinterest';
+import { getPinterestSyncNotice } from '@/lib/pinterest-sync-result';
 import { toast } from '@/hooks/use-toast';
 
 const AddInspiration = () => {
@@ -115,10 +116,7 @@ const AddInspiration = () => {
   const handleSyncBoard = async (boardId: string, boardName: string) => {
     try {
       const result = await sync(boardId);
-      toast({
-        title: 'Board Synced!',
-        description: `Imported ${result.synced} new pins from "${boardName}".`,
-      });
+      toast(getPinterestSyncNotice(boardName, result));
     } catch (err: any) {
       toast({ title: 'Sync Failed', description: err.message, variant: 'destructive' });
     }
