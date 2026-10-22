@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizeInstagramHandle } from "../_shared/instagram.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,13 +40,34 @@ serve(async (req) => {
     if (authError || !user) throw new Error("Unauthorized");
 
     const { influencer_name, instagram_handle } = await req.json();
-    if (!influencer_name?.trim()) throw new Error("Missing influencer_name");
+    if (typeof influencer_name !== "string" || !influencer_name.trim()) {
+      return new Response(JSON.stringify({ error: "Enter an influencer name." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (influencer_name.trim().length > 100) {
+      return new Response(JSON.stringify({ error: "Influencer names must be 100 characters or fewer." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    let normalizedHandle = "";
+    try {
+      normalizedHandle = normalizeInstagramHandle(typeof instagram_handle === "string" ? instagram_handle : "");
+    } catch (error) {
+      return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Enter a valid Instagram username or profile link." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const influencerName = influencer_name.trim();
 
     // Check cache first (case-insensitive)
     const { data: cached } = await supabase
       .from("influencer_styles")
       .select("*")
-      .ilike("influencer_name", influencer_name.trim())
+      .ilike("influencer_name", influencerName)
       .maybeSingle();
 
     if (cached) {
@@ -55,7 +77,7 @@ serve(async (req) => {
     }
 
     // Generate with AI
-    const prompt = `You are a fashion expert. Describe the style of fashion influencer "${influencer_name.trim()}"${instagram_handle ? ` (Instagram: @${instagram_handle})` : ""}.
+    const prompt = `You are a fashion expert. Describe the style of fashion influencer "${influencerName}"${normalizedHandle ? ` (Instagram: @${normalizedHandle})` : ""}.
 
 Provide:
 1. Overall aesthetic (one sentence)
@@ -112,7 +134,7 @@ Return ONLY valid JSON in this exact format:
     const styleProfile = JSON.parse(jsonMatch[0]);
 
     if (styleProfile.confidence < 0.3) {
-      return new Response(JSON.stringify({ success: false, error: "unknown_influencer", message: `AI couldn't find reliable style information for "${influencer_name}".` }), {
+      return new Response(JSON.stringify({ success: false, error: "unknown_influencer", message: `AI couldn't find reliable style information for "${influencerName}".` }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -122,8 +144,8 @@ Return ONLY valid JSON in this exact format:
     const { data: inserted, error: insertError } = await supabase
       .from("influencer_styles")
       .insert({
-        influencer_name: influencer_name.trim(),
-        instagram_handle: instagram_handle?.trim() || null,
+        influencer_name: influencerName,
+        instagram_handle: normalizedHandle || null,
         style_profile: styleProfile,
       })
       .select()

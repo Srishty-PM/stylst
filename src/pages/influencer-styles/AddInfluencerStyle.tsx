@@ -8,18 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { useGenerateInfluencerStyle, useAddInfluencerPreference, type StyleProfile } from '@/hooks/useInfluencerStyles';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { normalizeInstagramHandle } from '@/lib/instagram';
 import { z } from 'zod';
 
 const schema = z.object({
   influencer_name: z.string().trim().min(1, 'Name is required').max(100),
-  instagram_handle: z.string().max(30).optional(),
 });
+
+const errorMessage = (value: unknown) => value instanceof Error ? value.message : 'Please try again.';
 
 const AddInfluencerStyle = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
   const generateStyle = useGenerateInfluencerStyle();
   const addPreference = useAddInfluencerPreference();
 
@@ -27,23 +27,32 @@ const AddInfluencerStyle = () => {
   const [handle, setHandle] = useState('');
   const [result, setResult] = useState<{ profile: StyleProfile; id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const cleanHandle = (val: string) => val.replace(/.*instagram\.com\//, '').replace(/^@/, '').trim();
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; handle?: string }>({});
 
   const handleGenerate = async () => {
-    const parsed = schema.safeParse({ influencer_name: name, instagram_handle: handle });
+    const parsed = schema.safeParse({ influencer_name: name });
     if (!parsed.success) {
-      toast({ title: 'Validation Error', description: parsed.error.issues[0].message, variant: 'destructive' });
+      setFieldErrors({ name: parsed.error.issues[0].message });
+      return;
+    }
+
+    let normalizedHandle = '';
+    try {
+      normalizedHandle = normalizeInstagramHandle(handle);
+    } catch (caught) {
+      setFieldErrors({ handle: caught instanceof Error ? caught.message : 'Enter a valid Instagram username or profile link.' });
       return;
     }
 
     setResult(null);
     setError(null);
+    setFieldErrors({});
+    if (normalizedHandle) setHandle(`@${normalizedHandle}`);
 
     try {
       const data = await generateStyle.mutateAsync({
         influencer_name: parsed.data.influencer_name,
-        instagram_handle: cleanHandle(handle),
+        instagram_handle: normalizedHandle || undefined,
       });
 
       if (!data.success) {
@@ -52,8 +61,8 @@ const AddInfluencerStyle = () => {
       }
 
       setResult({ profile: data.profile, id: data.id });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (caught: unknown) {
+      toast({ title: 'Could not generate style profile', description: errorMessage(caught), variant: 'destructive' });
     }
   };
 
@@ -63,8 +72,8 @@ const AddInfluencerStyle = () => {
       await addPreference.mutateAsync(result.id);
       toast({ title: `✓ ${name} added to your styles!` });
       navigate('/settings/influencer-styles');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (caught: unknown) {
+      toast({ title: 'Could not save influencer', description: errorMessage(caught), variant: 'destructive' });
     }
   };
 
@@ -88,20 +97,31 @@ const AddInfluencerStyle = () => {
               id="influencer-name"
               placeholder="e.g., Matilda Djerf"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => { setName(e.target.value); setFieldErrors(current => ({ ...current, name: undefined })); }}
               maxLength={100}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? 'influencer-name-error' : undefined}
             />
+            {fieldErrors.name && <p id="influencer-name-error" role="alert" className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="instagram-handle">Instagram Handle (optional)</Label>
+            <Label htmlFor="instagram-handle">Instagram username or profile link (optional)</Label>
             <Input
               id="instagram-handle"
               placeholder="@matildadjerf or instagram.com/matildadjerf"
               value={handle}
-              onChange={e => setHandle(e.target.value)}
-              maxLength={60}
+              onChange={e => { setHandle(e.target.value); setFieldErrors(current => ({ ...current, handle: undefined })); }}
+              maxLength={2048}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={Boolean(fieldErrors.handle)}
+              aria-describedby={fieldErrors.handle ? 'instagram-handle-error' : 'instagram-handle-help'}
             />
+            {fieldErrors.handle
+              ? <p id="instagram-handle-error" role="alert" className="text-xs text-destructive">{fieldErrors.handle}</p>
+              : <p id="instagram-handle-help" className="text-xs text-muted-foreground">Paste the full profile link or enter the username. We’ll format it for you.</p>}
           </div>
 
           <p className="text-xs text-muted-foreground flex items-center gap-1">
