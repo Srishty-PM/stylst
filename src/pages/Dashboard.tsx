@@ -1,3 +1,5 @@
+import StyleStart from '@/components/next/StyleStart';
+import { NEXT_RELEASE_ENABLED } from '@/lib/next-release';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClosetItems } from '@/hooks/useClosetItems';
@@ -88,6 +90,8 @@ const Dashboard = () => {
         <h1 className="font-display text-3xl font-bold text-foreground">{greeting}, {firstName}!</h1>
         <p className="text-muted-foreground mt-1">{format(today, 'EEEE, MMMM d, yyyy')}</p>
       </motion.div>
+
+      {NEXT_RELEASE_ENABLED && !isLoading && <StyleStart closetCount={closetCount} inspirationCount={inspoCount} />}
 
       {/* Today's Outfit */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>

@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom';
+import { NEXT_RELEASE_ENABLED } from '@/lib/next-release';
 import { useState } from 'react';
-import { Heart, ShoppingBag, ArrowUpRight } from 'lucide-react';
+import { Heart, ShoppingBag, ArrowUpRight, UserRound } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { formatShopPrice, type ShopProduct } from '@/lib/shop-catalogue';
@@ -52,6 +54,7 @@ const ProductDetailSheet = ({ product, onClose, isSaved, onToggleSave }: Product
               {product.sizes.length > 0 && <p className="text-sm"><span className="font-medium">Listed sizes: </span>{product.sizes.join(', ')}. Confirm availability with the retailer.</p>}
               <p className="text-xs text-muted-foreground">Product information updated {new Date(product.updatedAt).toLocaleDateString('en-GB')}. Final price, availability and delivery are confirmed by the retailer.</p>
               <Button variant="outline" className="w-full gap-2" onClick={() => onToggleSave(product.id)} aria-pressed={isSaved}><Heart className={`w-4 h-4 ${isSaved ? 'fill-primary text-primary' : ''}`} />{isSaved ? 'Saved on this device' : 'Save this item'}</Button>
+              {NEXT_RELEASE_ENABLED && product.imageUrl && ['tops', 'bottoms', 'dresses', 'outerwear'].includes(product.category) && <Button asChild variant="outline" className="w-full gap-2"><Link to={`/try-on?${new URLSearchParams({ product: product.id })}`} onClick={onClose}><UserRound className="w-4 h-4" />Try on my avatar</Link></Button>}
               {product.affiliateUrl && <p className="text-xs text-muted-foreground">Affiliate link: STYLST may earn a commission if you buy, at no extra cost to you.</p>}
               <Button className="w-full gap-2 min-h-11" onClick={handleRetailer} disabled={opening}><ArrowUpRight className="w-4 h-4" />{opening ? 'Opening retailer…' : `Continue to ${product.retailer.name}`}</Button>
               <p className="text-xs text-muted-foreground">Complete your purchase with {product.retailer.name}, who handles payment, delivery and returns.</p>

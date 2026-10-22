@@ -17,9 +17,10 @@ interface ShopBrowserProps {
   initialQuery?: string;
   initialCategory?: ShopCategory;
   enabled?: boolean;
+  budgetLimit?: { currency: ShopCurrency; max?: number };
 }
 
-const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true }: ShopBrowserProps) => {
+const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budgetLimit }: ShopBrowserProps) => {
   const { user, profile } = useAuth();
   const { data, isLoading, isError, refetch } = useShopCatalogue(enabled);
   const { savedIds, toggleSave } = useSavedShopProducts(user?.id ?? 'guest');
@@ -33,11 +34,12 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true }: Sho
   const [selected, setSelected] = useState<ShopProduct | null>(null);
   const [limit, setLimit] = useState(48);
   const products = useMemo(() => data?.products ?? [], [data?.products]);
-  const maxPrice = useMemo(() => Math.max(500, Math.ceil(products.filter(p => p.currency === currency).reduce((max, p) => Math.max(max, p.price), 0) / 50) * 50), [products, currency]);
+  const maxPrice = useMemo(() => Math.max(500, Math.ceil(products.filter(p => p.currency === (budgetLimit?.currency ?? currency)).reduce((max, p) => Math.max(max, p.price), 0) / 50) * 50), [products, currency, budgetLimit?.currency]);
+  const effectiveCurrency = budgetLimit?.currency ?? currency;
   const range: [number, number] = budget ? [Math.min(budget[0], maxPrice), Math.min(budget[1], maxPrice)] : [0, maxPrice];
-  const filtered = selectProducts(products, { query, category, currency, minPrice: range[0], maxPrice: range[1], sort, savedIds: savedOnly ? savedIds : undefined });
+  const filtered = selectProducts(products, { query, category, currency: effectiveCurrency, minPrice: range[0], maxPrice: Math.min(range[1], budgetLimit?.max ?? Infinity), sort, savedIds: savedOnly ? savedIds : undefined });
 
-  useEffect(() => { setLimit(48); }, [query, category, currency, budget, sort, savedOnly]);
+  useEffect(() => { setLimit(48); }, [query, category, currency, budget, sort, savedOnly, budgetLimit?.max, budgetLimit?.currency]);
 
   const onSave = (id: string) => {
     track('shop_product_saved', { product_id: id, saved: !savedIds.has(id) });
@@ -64,10 +66,10 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true }: Sho
       {[undefined, ...SHOP_CATEGORIES].map(value => <button type="button" key={value ?? 'all'} onClick={() => setCategory(value)} aria-pressed={category === value} className={`shrink-0 px-3 py-2 rounded-full border text-xs capitalize ${category === value ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground'}`}>{value ?? 'All pieces'}</button>)}
     </div>
     <div className="rounded-xl bg-secondary/30 p-4 space-y-4">
-      <PriceFilter min={0} max={maxPrice} value={range} onChange={setBudget} currency={currency === 'GBP' ? '£' : currency === 'USD' ? '$' : '€'} />
+      <PriceFilter min={0} max={maxPrice} value={range} onChange={setBudget} currency={effectiveCurrency === 'GBP' ? '£' : effectiveCurrency === 'USD' ? '$' : '€'} />
       <div className="flex gap-3 items-center justify-between flex-wrap">
         <p className="text-xs text-muted-foreground" role="status">{filtered.length} {filtered.length === 1 ? 'piece' : 'pieces'}{savedOnly ? ' saved on this device' : ''}</p>
-        <div className="flex items-center gap-2"><select aria-label="Shop currency" value={currency} onChange={event => { setCurrency(event.target.value as ShopCurrency); setBudget(null); }} className="bg-background border border-border rounded px-2 py-1.5 text-xs">{SHOP_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}</select><SortDropdown value={sort} onChange={setSort} /></div>
+        <div className="flex items-center gap-2"><select aria-label="Shop currency" disabled={Boolean(budgetLimit)} value={effectiveCurrency} onChange={event => { setCurrency(event.target.value as ShopCurrency); setBudget(null); }} className="bg-background border border-border rounded px-2 py-1.5 text-xs">{SHOP_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}</select><SortDropdown value={sort} onChange={setSort} /></div>
       </div>
     </div>
     {filtered.length ? <>
