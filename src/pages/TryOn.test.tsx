@@ -6,8 +6,8 @@ const mocks = vi.hoisted(() => ({ render: vi.fn(), save: vi.fn(), remove: vi.fn(
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'test-person' } }) }));
 vi.mock('@/hooks/useClosetItems', () => ({ useClosetItems: () => ({ data: [{ id: 'shirt', name: 'Blue shirt', category: 'tops', image_url: 'https://images.example/shirt.jpg' }], isLoading: false, isError: false }) }));
 vi.mock('@/hooks/useShopCatalogue', () => ({ useShopCatalogue: () => ({ data: { products: [] } }) }));
-vi.mock('@/hooks/useTryOn', () => ({ useTryOn: () => ({ mutateAsync: mocks.render, isPending: false }) }));
-vi.mock('@/lib/next-release', () => ({ get TRY_ON_RENDERING_ENABLED() { return mocks.enabled; } }));
+vi.mock('@/hooks/useTryOn', () => ({ useTryOn: () => ({ mutateAsync: mocks.render, isPending: false }), useTryOnAvailability: () => ({ data: { enabled: mocks.enabled, remaining: 3, dailyLimit: 3, globalAvailable: true }, isLoading: false, isError: false, refetch: vi.fn() }) }));
+vi.mock('@/lib/next-release', () => ({ NEXT_RELEASE_ENABLED: true, canRenderTryOn: (_web: boolean, state: { enabled: boolean }) => state.enabled }));
 vi.mock('@/lib/avatar-store', () => ({ loadAvatar: vi.fn(async () => undefined), saveAvatar: mocks.save, deleteAvatar: mocks.remove }));
 vi.mock('@/lib/try-on', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/try-on')>(), prepareTryOnPhoto: vi.fn(async () => ({ mimeType: 'image/jpeg', data: 'source-photo' })), prepareGarmentPhoto: mocks.garment }));
 import TryOn from './TryOn';
@@ -59,11 +59,11 @@ describe('avatar creation and wardrobe try-on', () => {
     await waitFor(() => expect(screen.queryByText('Preparing your preview…')).not.toBeInTheDocument());
     expect(mocks.render).toHaveBeenCalledOnce();
   });
-  it('does not permit rendering before a separate sandbox is configured', async () => {
+  it('does not permit rendering while the server reports it unavailable', async () => {
     mocks.enabled = false;
     show();
     await waitFor(() => expect(screen.queryByLabelText('Loading saved avatar')).not.toBeInTheDocument());
-    expect(screen.getByText(/no photos will be sent/)).toBeVisible();
+    expect(screen.getByText(/No photos will be sent/)).toBeVisible();
     fireEvent.click(screen.getByRole('checkbox'));
     expect(screen.getByRole('button', { name: 'Create my avatar' })).toBeDisabled();
     expect(mocks.render).not.toHaveBeenCalled();

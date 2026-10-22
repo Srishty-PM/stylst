@@ -65,3 +65,8 @@ Stylst is intended for adults aged 18 or older. AI processing is optional and re
 ## 10. Contact
 
 For questions about this policy, email [privacy@stylst.app](mailto:privacy@stylst.app).
+
+
+## Avatar and try-on processing (22 October 2026)
+
+A separate per-session adult/own-photo consent covers selected face/body photos, clothing images and avatar settings sent through the authenticated avatar endpoint to Google Gemini under paid-service processing. Original photos are kept in page memory and discarded after avatar creation. Saving a generated avatar is explicit, account-scoped and device-local; Delete removes that local copy. No request photos or generated images are saved in the application’s server database or storage. The server records only request/account IDs, timestamp and completion status for daily quota enforcement. Account deletion cascades that request metadata. Anonymous daily attempt totals remain for cost controls. Consent withdrawal stops new requests and prevents late images being displayed but cannot recall a request already sent to Google. Provider retention remains governed by Google’s terms; avatar deletion is not a promise to delete provider processing records.

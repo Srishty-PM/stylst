@@ -17,7 +17,7 @@ const Privacy = () => (
 
     <main className="max-w-3xl mx-auto px-6 py-12 prose prose-neutral dark:prose-invert">
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: October 7, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 22, 2026</p>
 
       <h2>1. Information We Collect</h2>
       <p>When you use Stylst, we collect:</p>
@@ -48,6 +48,11 @@ const Privacy = () => (
       <p><strong>Google's processing and protection:</strong> the <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">Gemini API terms</a> distinguish paid and unpaid services. For paid services, Google does not use submitted content or responses to improve its products and processes them under its <a href="https://business.safety.google/processorterms/" target="_blank" rel="noopener noreferrer">Data Processing Addendum</a>. Limited retention for safety and legal purposes can still apply. Unpaid services can involve model improvement and human review, so sensitive or personal information should not be submitted to them. Stylst's released iOS service requires Google's paid-service data protections.</p>
       <p><strong>Service-provider safeguards:</strong> data is sent over encrypted HTTPS connections. Supabase access policies separate account data, and AI keys remain on the server. The processor terms above describe provider security, confidentiality, and processing limits. We do not promise zero retention by Google or that withdrawing permission deletes Google's existing records.</p>
       <p><strong>Retailer and affiliate links:</strong> opening a shopping link takes you to the retailer, sometimes through an affiliate network that attributes the referral. The retailer and network handle that visit under their own privacy policies. STYLST does not include your account ID, email, wardrobe photos or style prompts in these links, and does not collect payment or delivery details for retailer purchases.</p>
+
+      <h2>Photo-realistic avatar and outfit previews</h2>
+      <p>The optional fitting room processes a reference photo of yourself, chosen clothing images and avatar settings such as height, build and hair. These can include your face and body. A separate, unchecked confirmation is required for this processing, including confirmation that you are an adult and are using your own photo. Existing clothing-styling permission does not grant avatar-photo permission.</p>
+      <p>When you request a preview, these selected images and settings are sent over HTTPS through our server function to Google Gemini using paid-service processing. We do not append your account email or password to the model request. Source photos are held in the page session and cleared after avatar creation; leaving or reloading the page clears unsaved source photos. Generated avatars are saved on this device, separately for your account, only when you choose Save avatar. You can remove them using Delete in the fitting room. A try-on preview is an AI styling illustration, not a prediction of clothing size or fit.</p>
+      <p>Our application does not store these request photos or generated images in its server database or image storage. It records request identifiers, your account ID, request time and completion status to enforce preview limits. This usage metadata is deleted with your account; aggregate daily counts without account identifiers remain for cost controls. Withdrawing photo consent stops new requests and discards arriving preview results, but cannot recall content already sent to Google. Google’s provider retention and safety-processing terms above continue to apply. Deleting a saved avatar removes the copy on this device and does not delete Google’s processing records.</p>
 
       <h2>4. Pinterest Data</h2>
       <p>If you connect your Pinterest account:</p>

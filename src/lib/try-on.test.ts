@@ -12,12 +12,13 @@ describe('try-on isolation and input contract', () => {
     expect(isWebRelease('ios')).toBe(false);
     expect(isWebRelease('android')).toBe(false);
   });
-  it('never enables rendering against the production project or without explicit sandbox config', () => {
-    expect(canRenderTryOn(true, 'https://dzhhrtxlmmmbhggwsbrh.supabase.co', 'dzhhrtxlmmmbhggwsbrh')).toBe(false);
-    expect(canRenderTryOn(true, 'https://test-project.supabase.co')).toBe(false);
-    expect(canRenderTryOn(false, 'https://test-project.supabase.co', 'test-project')).toBe(false);
-    expect(canRenderTryOn(true, 'https://other-project.supabase.co', 'test-project')).toBe(false);
-    expect(canRenderTryOn(true, 'https://test-project.supabase.co', 'test-project')).toBe(true);
+  it('requires affirmative server readiness and available quota before sending photos', () => {
+    expect(canRenderTryOn(true)).toBe(false);
+    expect(canRenderTryOn(true, { enabled: false, remaining: 3 })).toBe(false);
+    expect(canRenderTryOn(false, { enabled: true, remaining: 3 })).toBe(false);
+    expect(canRenderTryOn(true, { enabled: true, remaining: 0 })).toBe(false);
+    expect(canRenderTryOn(true, { enabled: true, remaining: 3, globalAvailable: false })).toBe(false);
+    expect(canRenderTryOn(true, { enabled: true, remaining: 3, globalAvailable: true })).toBe(true);
   });
   it('requires the dedicated current photo consent, independently of old styling consent', () => {
     expect(TRY_ON_CONSENT_VERSION).toBe(CONSENT_VERSION);
