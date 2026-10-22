@@ -9,9 +9,10 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
 import { useAddLook } from '@/hooks/useLooks';
+import { useClosetItems } from '@/hooks/useClosetItems';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureAIConsent, runAIRequest } from '@/lib/ai-consent';
-import { stylistResultSchema, type StylistOutfit, type StylistResult } from '@/lib/ai-stylist';
+import { legacyStylistTextToResult, stylistResultSchema, type StylistOutfit, type StylistResult } from '@/lib/ai-stylist';
 import VisualOutfitCard from '@/components/stylist/VisualOutfitCard';
 
 const SUGGESTIONS = [
@@ -25,6 +26,7 @@ const AIStylist = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: activeInfluencers } = useActiveInfluencerStyles();
+  const { data: closetItems = [] } = useClosetItems();
   const addLook = useAddLook();
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState<StylistResult | null>(null);
@@ -63,9 +65,33 @@ const AIStylist = () => {
         throw new Error(err.error || `Error ${resp.status}`);
       }
 
-      const parsed = stylistResultSchema.safeParse(await resp.json());
-      if (!parsed.success) throw new Error('The stylist returned an incomplete look. Please try again.');
-      setResult(parsed.data);
+      if ((resp.headers.get('content-type') || '').includes('application/json')) {
+        const parsed = stylistResultSchema.safeParse(await resp.json());
+        if (!parsed.success) throw new Error('The stylist returned an incomplete look. Please try again.');
+        setResult(parsed.data);
+      } else {
+        if (!resp.body) throw new Error('The stylist returned no outfit suggestions.');
+        const reader = resp.body.getReader(), decoder = new TextDecoder();
+        let buffer = '', full = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let newline = buffer.indexOf('\n');
+          while (newline !== -1) {
+            const line = buffer.slice(0, newline).replace(/\r$/, '');
+            buffer = buffer.slice(newline + 1);
+            if (line.startsWith('data: ')) {
+              const payload = line.slice(6).trim();
+              if (payload !== '[DONE]') {
+                try { full += JSON.parse(payload).choices?.[0]?.delta?.content || ''; } catch { /* wait for the next complete event */ }
+              }
+            }
+            newline = buffer.indexOf('\n');
+          }
+        }
+        setResult(legacyStylistTextToResult(full, closetItems, text));
+      }
     } catch (error) {
       if (!(error instanceof Error && error.name === 'AbortError')) {
         toast({ title: 'AI Error', description: error instanceof Error ? error.message : 'Your outfits could not be created.', variant: 'destructive' });
