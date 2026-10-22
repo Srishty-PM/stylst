@@ -8,8 +8,11 @@ import { useState, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useActiveInfluencerStyles } from '@/hooks/useInfluencerStyles';
+import { useAddLook } from '@/hooks/useLooks';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureAIConsent, runAIRequest } from '@/lib/ai-consent';
+import { stylistResultSchema, type StylistOutfit, type StylistResult } from '@/lib/ai-stylist';
+import VisualOutfitCard from '@/components/stylist/VisualOutfitCard';
 
 const SUGGESTIONS = [
   "Create a casual weekend outfit",
@@ -19,11 +22,13 @@ const SUGGESTIONS = [
 ];
 
 const AIStylist = () => {
-  const { profile, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { data: activeInfluencers } = useActiveInfluencerStyles();
+  const addLook = useAddLook();
   const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
+  const [result, setResult] = useState<StylistResult | null>(null);
+  const [savedLooks, setSavedLooks] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -33,7 +38,8 @@ const AIStylist = () => {
     if (!user || !await ensureAIConsent(user.id)) return;
 
     setIsLoading(true);
-    setResponse('');
+    setResult(null);
+    setSavedLooks({});
     abortRef.current = new AbortController();
 
     try {
@@ -57,45 +63,34 @@ const AIStylist = () => {
         throw new Error(err.error || `Error ${resp.status}`);
       }
 
-      if (!resp.body) throw new Error('No response body');
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let full = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIdx: number;
-        while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, newlineIdx);
-          buffer = buffer.slice(newlineIdx + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              full += content;
-              setResponse(full);
-            }
-          } catch {
-            buffer = line + '\n' + buffer;
-            break;
-          }
-        }
-      }
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
-        toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+      const parsed = stylistResultSchema.safeParse(await resp.json());
+      if (!parsed.success) throw new Error('The stylist returned an incomplete look. Please try again.');
+      setResult(parsed.data);
+    } catch (error) {
+      if (!(error instanceof Error && error.name === 'AbortError')) {
+        toast({ title: 'AI Error', description: error instanceof Error ? error.message : 'Your outfits could not be created.', variant: 'destructive' });
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSave = async (outfit: StylistOutfit, index: number) => {
+    if (!user || savedLooks[index]) return;
+    try {
+      const saved = await addLook.mutateAsync({
+        user_id: user.id,
+        name: outfit.name,
+        closet_item_ids: outfit.itemIds,
+        occasion: outfit.occasion,
+        season: outfit.season,
+        notes: outfit.whyItWorks,
+        created_by_ai: true,
+      });
+      setSavedLooks(current => ({ ...current, [index]: saved.id }));
+      toast({ title: 'Look saved', description: `${outfit.name} is now in My Looks.` });
+    } catch (error) {
+      toast({ title: 'Couldn’t save look', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     }
   };
 
@@ -134,7 +129,7 @@ const AIStylist = () => {
       )}
 
       {/* Quick suggestions */}
-      {!response && !isLoading && (
+      {!result && !isLoading && (
         <div className="grid grid-cols-2 gap-2">
           {SUGGESTIONS.map(s => (
             <button
@@ -149,26 +144,23 @@ const AIStylist = () => {
       )}
 
       {/* Response */}
-      {(response || isLoading) && (
-        <Card>
-          <CardContent className="p-5">
-            {isLoading && !response && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Analyzing your closet...</span>
-              </div>
-            )}
-            {response && (
-              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
-                {response}
-              </div>
-            )}
-            {isLoading && response && (
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground mt-2" />
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {isLoading && <Card><CardContent className="p-8 flex flex-col items-center justify-center gap-3 text-center min-h-40">
+        <Loader2 className="w-7 h-7 animate-spin text-primary" />
+        <div><p className="font-medium">Building your outfit boards…</p><p className="text-sm text-muted-foreground mt-1">Matching pieces and photos from your closet</p></div>
+      </CardContent></Card>}
+
+      {result && <section className="space-y-4" aria-label="Your visual outfit suggestions">
+        <p className="text-sm leading-relaxed text-muted-foreground">{result.intro}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {result.outfits.map((outfit, index) => <VisualOutfitCard
+            key={`${outfit.name}-${index}`}
+            outfit={outfit}
+            saved={Boolean(savedLooks[index])}
+            saving={addLook.isPending}
+            onSave={() => void handleSave(outfit, index)}
+          />)}
+        </div>
+      </section>}
 
       {/* Input */}
       <Card>
