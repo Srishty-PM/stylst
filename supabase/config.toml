@@ -29,3 +29,7 @@ verify_jwt = false
 
 [functions.gemini-check]
 verify_jwt = false
+
+# The handler validates every bearer token with auth.getUser before any quota or image request.
+[functions.avatar-try-on]
+verify_jwt = false
