@@ -1,22 +1,14 @@
-# STYLST production verification (read-only findings)
+# Fitting room setup check (read-only, 22 Oct 2026)
 
-## Verified
-- Project dzhhrtxlmmmbhggwsbrh is Lovable Cloud-managed (it is this project's Cloud backend). That is why an outside Supabase connector cannot reach it.
-- All AI functions (ai-stylist, auto-match, analyze-clothing, generate-influencer-style, generate-thumbnail, remove-background, shop-recommendations) call Google directly at generativelanguage.googleapis.com using the secret named GEMINI_API_KEY. LOVABLE_API_KEY also exists, but these functions don't use it.
-- Health check (gemini-check, test prompts only: "Reply OK" and "red circle"; no user data) returned 200 on 15 Oct 2026. gemini-3.5-flash, gemini-3-flash-preview, gemini-2.5-flash-image and gemini-3.1-flash-image work. gemini-2.0-flash and gemini-2.5-flash-lite return 404 (retired). No code currently in the repo uses them as a primary model.
-- The code in the repo shows "Last updated: October 7, 2026" on the privacy page.
-- The public page https://stylst.shop/privacy currently shows **"Last updated: August 13, 2026"**. So the October 7 policy is NOT live yet. The published web app is behind the repo.
+## Findings
+- GEMINI_API_KEY is set in the backend secrets. Its value was not read.
+- GEMINI_PAID_SERVICES_VERIFIED is not a backend secret. It is only a GitHub repository variable, read by the iOS release workflow. I can't see GitHub variables from here, so I can't tell whether it's set. I found no billing or paid-tier proof anywhere in the backend.
+- Image models: test prompts with no user data (a red circle) work today on gemini-3.1-flash-image and gemini-2.5-flash-image. The key can also see gemini-3-pro-image, gemini-3-pro-image-preview, gemini-3.1-flash-image-preview and gemini-3.1-flash-lite-image, but I didn't test those. These tests only generated images from text. Editing an existing photo hasn't been tested, so it's still unconfirmed.
+- avatar-try-on does not exist in the synced code yet. Once it's synced, I can publish that one function by itself. Doing so leaves every other AI feature and the iOS build 4 sent to Apple untouched. It will also need its own security setting entry, the same way each existing function has one.
 
-## Not verifiable from here
-- Whether the Google project behind GEMINI_API_KEY has billing on (paid tier). The Gemini API gives no billing status. Successful calls don't prove a paid tier, because free-tier keys work too.
-- Which Google Cloud project owns that key.
+## Still unknown
+- Whether the Google project behind the key has billing on (paid tier). The owner can check at https://aistudio.google.com/apikey and https://console.cloud.google.com/billing.
+- Whether the live privacy page now shows the October 7 policy. On 15 Oct it still showed August 13.
 
-## Where the owner can check
-- https://aistudio.google.com/apikey shows each key, its project and its tier ("Free" or "Paid"/billing tier).
-- https://console.cloud.google.com/billing shows whether billing is linked to that project.
-
-## Upload gate
-- GEMINI_PAID_SERVICES_VERIFIED must NOT be set to true yet. The paid tier is unconfirmed and the live privacy policy is outdated.
-- Set it to true only after the owner (1) confirms in AI Studio that the key's project is on a paid tier, and (2) republishes the web app so stylst.shop/privacy shows October 7, 2026.
-
-No changes were made.
+## Next step after approval
+- Publish only avatar-try-on, once it shows up in the synced code. Then test it with a made-up, non-personal image.
