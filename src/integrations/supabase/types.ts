@@ -62,6 +62,81 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_global_daily_usage: {
+        Row: {
+          attempts: number
+          day: string
+        }
+        Insert: {
+          attempts?: number
+          day: string
+        }
+        Update: {
+          attempts?: number
+          day?: string
+        }
+        Relationships: []
+      }
+      avatar_render_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      avatar_service_config: {
+        Row: {
+          enabled: boolean
+          global_daily_limit: number
+          id: number
+          model: string
+          paid_services_verified: boolean
+          per_user_attempt_limit: number
+          per_user_daily_limit: number
+          updated_at: string
+          verification_note: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          global_daily_limit?: number
+          id: number
+          model?: string
+          paid_services_verified?: boolean
+          per_user_attempt_limit?: number
+          per_user_daily_limit?: number
+          updated_at?: string
+          verification_note?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          global_daily_limit?: number
+          id?: number
+          model?: string
+          paid_services_verified?: boolean
+          per_user_attempt_limit?: number
+          per_user_daily_limit?: number
+          updated_at?: string
+          verification_note?: string | null
+        }
+        Relationships: []
+      }
       closet_items: {
         Row: {
           ai_confidence: number | null
@@ -501,9 +576,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      avatar_render_status: { Args: { p_user_id: string }; Returns: Json }
       consume_generation: { Args: { p_limit: number }; Returns: number }
+      finish_avatar_render: {
+        Args: { p_request_id: string; p_success: boolean }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       refund_generation: { Args: never; Returns: undefined }
+      reserve_avatar_render: {
+        Args: { p_request_id: string; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
