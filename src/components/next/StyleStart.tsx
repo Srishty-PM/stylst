@@ -1,13 +1,26 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Heart, ImagePlus, Sparkles, UserRound } from 'lucide-react';
+import { ArrowRight, Check, Heart, ImagePlus, Shirt, Sparkles, UserRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export default function StyleStart({ closetCount, inspirationCount }: { closetCount: number; inspirationCount: number }) {
-  return <section aria-labelledby="style-start-heading" className="rounded-2xl border border-border bg-card p-5 md:p-7 space-y-5">
-    <div><p className="text-xs tracking-[0.18em] uppercase text-primary">Your style, made simple</p><h2 id="style-start-heading" className="text-3xl mt-2">What are we dressing for?</h2><p className="text-sm text-muted-foreground mt-2">Start with a look you love, or find a new way to wear what you own.</p></div>
-    <div className="grid sm:grid-cols-2 gap-3">
-      <Link to={inspirationCount ? '/inspiration' : '/inspiration/add'} className="rounded-xl border border-border p-4 hover:border-primary focus-visible:outline-primary space-y-2"><ImagePlus className="w-5 h-5 text-primary" /><h3 className="text-xl">Recreate a look</h3><p className="text-sm text-muted-foreground">Choose inspiration. Find your closet matches. Shop only what’s missing.</p><span className="inline-flex items-center gap-2 text-sm font-medium">{inspirationCount ? 'Choose a saved look' : 'Add your first inspiration'}<ArrowRight className="w-4 h-4" /></span></Link>
-      <Link to={closetCount ? '/ai-stylist' : '/closet/add'} className="rounded-xl border border-border p-4 hover:border-primary focus-visible:outline-primary space-y-2"><Sparkles className="w-5 h-5 text-primary" /><h3 className="text-xl">Create something new</h3><p className="text-sm text-muted-foreground">Tell your stylist the occasion and explore ideas for your wardrobe.</p><span className="inline-flex items-center gap-2 text-sm font-medium">{closetCount ? 'Style my wardrobe' : 'Add a piece to get started'}<ArrowRight className="w-4 h-4" /></span></Link>
+export default function StyleStart({ closetCount, inspirationCount, avatarReady = false }: { closetCount: number; inspirationCount: number; avatarReady?: boolean }) {
+  const hasCloset = closetCount > 0;
+  const hasInspiration = inspirationCount > 0;
+  const next = !hasCloset
+    ? { to: '/closet/add', label: 'Add your first closet piece', note: 'Start with the clothes you already own.' }
+    : !hasInspiration
+      ? { to: '/inspiration/add', label: 'Add your first inspiration', note: 'Upload, photograph or sync a look you love.' }
+      : { to: '/inspiration', label: 'Choose a look to recreate', note: 'We’ll match your closet, show what is missing and let you try it on.' };
+  const steps = [
+    { label: 'Closet', detail: hasCloset ? `${closetCount} ${closetCount === 1 ? 'piece' : 'pieces'}` : 'Add clothing', done: hasCloset, icon: Shirt },
+    { label: 'Inspiration', detail: hasInspiration ? `${inspirationCount} saved` : 'Add a look', done: hasInspiration, icon: ImagePlus },
+    { label: 'Recreate', detail: hasCloset && hasInspiration ? 'Ready' : 'Next', done: false, icon: Sparkles },
+    { label: 'Try on & shop', detail: avatarReady ? 'Avatar ready' : 'Avatar optional', done: avatarReady, icon: UserRound },
+  ];
+  return <section aria-labelledby="style-start-heading" className="rounded-2xl border border-border bg-card overflow-hidden">
+    <div className="p-5 md:p-7 space-y-2"><p className="text-xs tracking-[0.18em] uppercase text-primary">Your style flow</p><h2 id="style-start-heading" className="font-display text-3xl">From closet to complete look</h2><p className="text-sm text-muted-foreground">One clear path. Pick up from where you left off.</p></div>
+    <div className="grid grid-cols-2 md:grid-cols-4 border-y border-border">
+      {steps.map((step, index) => <div key={step.label} className={`p-3 md:p-4 min-h-24 ${index % 2 ? 'border-l border-border' : ''} ${index > 1 ? 'border-t md:border-t-0' : ''} ${index > 0 ? 'md:border-l md:border-border' : ''}`}><div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">0{index + 1}</span>{step.done ? <Check className="w-4 h-4 text-primary" /> : <step.icon className="w-4 h-4 text-muted-foreground" />}</div><p className="text-sm font-medium mt-3">{step.label}</p><p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p></div>)}
     </div>
-    <div className="flex flex-wrap gap-x-5 gap-y-3 text-sm"><Link to="/looks" className="inline-flex gap-2 items-center min-h-11"><Heart className="w-4 h-4" />Saved looks</Link><Link to="/calendar" className="inline-flex gap-2 items-center min-h-11"><CalendarDays className="w-4 h-4" />Plan my week</Link><Link to="/try-on" className="inline-flex gap-2 items-center min-h-11"><UserRound className="w-4 h-4" />My fitting room</Link></div>
+    <div className="p-5 md:p-7 space-y-4"><p className="text-sm text-muted-foreground">{next.note}</p><Button asChild className="w-full gap-2 min-h-12"><Link to={next.to}>{next.label}<ArrowRight className="w-4 h-4" /></Link></Button><div className="flex flex-wrap gap-x-5 gap-y-2 text-sm"><Link to="/ai-stylist" className="inline-flex gap-2 items-center min-h-11"><Sparkles className="w-4 h-4" />AI stylist</Link><Link to="/looks" className="inline-flex gap-2 items-center min-h-11"><Heart className="w-4 h-4" />Saved looks</Link>{!avatarReady && <Link to="/try-on" className="inline-flex gap-2 items-center min-h-11"><UserRound className="w-4 h-4" />Create avatar</Link>}</div></div>
   </section>;
 }

@@ -290,14 +290,10 @@ const AddClosetItem = () => {
                 </Button>
               </div>
             ) : (
-              <label className="block cursor-pointer">
-                <div className="border-2 border-dashed border-border rounded-xl p-10 text-center hover:border-accent/50 transition-colors">
-                  <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-foreground">Tap to upload your clothes</p>
-                  <p className="text-xs text-muted-foreground mt-1">Select multiple photos · JPG, PNG, WebP · Max 5MB each</p>
-                </div>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
-              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="cursor-pointer rounded-xl border border-border p-5 min-h-28 text-center flex flex-col items-center justify-center"><CameraIcon className="w-8 h-8 text-primary mb-2" /><span className="text-sm font-medium">Take item photo</span><span className="text-xs text-muted-foreground mt-1">One item at a time</span><input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} /></label>
+                <label className="cursor-pointer rounded-xl border border-border p-5 min-h-28 text-center flex flex-col items-center justify-center"><Upload className="w-8 h-8 text-primary mb-2" /><span className="text-sm font-medium">Upload items</span><span className="text-xs text-muted-foreground mt-1">Select multiple photos</span><input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} /></label>
+              </div>
             )}
 
             {items.length > 0 && (

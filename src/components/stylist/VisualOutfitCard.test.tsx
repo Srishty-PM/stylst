@@ -23,7 +23,7 @@ describe('visual outfit card', () => {
 
     expect(screen.getAllByRole('img')).toHaveLength(3);
     expect(screen.getByRole('img', { name: 'Tweed Jacket' })).toHaveAttribute('src', 'https://images.example/jacket.jpg');
-    expect(screen.getByRole('link', { name: /Try on/ })).toHaveAttribute('href', '/try-on?items=jacket%2Cskirt');
+    expect(screen.getByRole('button', { name: 'Try on' })).toHaveAttribute('aria-haspopup', 'dialog');
     fireEvent.click(screen.getByRole('button', { name: 'Save look' }));
     expect(onSave).toHaveBeenCalledOnce();
   });

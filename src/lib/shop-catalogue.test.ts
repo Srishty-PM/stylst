@@ -46,6 +46,7 @@ describe('approved retailer catalogue', () => {
     const base = { currency: 'GBP' as const, minPrice: 0, maxPrice: 100, sort: 'price_asc' as const };
     expect(selectProducts(products, { ...base, category: 'outerwear' }).map(p => p.id)).toEqual(['coat-2', 'coat-1']);
     expect(selectProducts(products, { ...base, query: 'beige' }).map(p => p.id)).toEqual(['coat-1']);
+    expect(selectProducts(products, { ...base, category: 'outerwear', size: 'm' }).map(p => p.id)).toEqual(['coat-1']);
     expect(selectProducts(products, { ...base, maxPrice: 50, savedIds: new Set(['coat-1', 'dress-1']) }).map(p => p.id)).toEqual(['dress-1']);
     expect(normalizeShopCategory('jacket')).toBe('outerwear');
     expect(normalizeShopCategory('unsupported')).toBeUndefined();

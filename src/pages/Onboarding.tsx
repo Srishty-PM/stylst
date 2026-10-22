@@ -8,14 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import {
-  ArrowRight, Sparkles, Loader2, Check, X, Upload,
+  ArrowRight, Sparkles, Loader2, Check, X,
   ImageIcon, ShirtIcon, ChevronLeft, Pencil, Camera as CameraIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAddInspiration, uploadInspirationImage } from '@/hooks/useInspirations';
 import { Link2 } from 'lucide-react';
 import { useAddClosetItem, uploadClosetImage } from '@/hooks/useClosetItems';
-import { usePinterestConnect } from '@/hooks/usePinterest';
+import { usePinterestBoards, usePinterestConnect, useSyncPinterestBoard } from '@/hooks/usePinterest';
+import { getPinterestSyncNotice } from '@/lib/pinterest-sync-result';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { CATEGORIES } from '@/lib/mock-data';
@@ -25,7 +26,7 @@ import { hasAIConsent, setAIConsent, ensureAIConsent, runAIRequest, AI_DATA_DESC
 const VALID_CATEGORIES = CATEGORIES.filter(c => c !== 'All').map(c => c.toLowerCase());
 const COLOR_OPTIONS = ['Black','White','Gray','Navy','Blue','Red','Green','Yellow','Orange','Pink','Purple','Brown','Beige','Cream'];
 
-type Step = 'welcome' | 'inspiration' | 'closet' | 'processing' | 'review' | 'review-summary' | 'matching' | 'results' | 'done';
+type Step = 'welcome' | 'inspiration' | 'closet' | 'processing' | 'review' | 'review-summary' | 'done';
 
 interface ClosetUpload {
   id: number; file: File; preview: string; imageUrl?: string;
@@ -34,23 +35,22 @@ interface ClosetUpload {
   status: 'pending' | 'uploading' | 'ready' | 'review' | 'error' | 'skipped';
 }
 
-interface MatchResult {
-  lookName: string; occasion: string; itemIds: string[]; itemNames: string[];
-  inspirationId: string; reasoning: string;
-}
-
-const STEP_PROGRESS: Record<Step, number> = { welcome: 0, inspiration: 25, closet: 50, processing: 60, review: 60, 'review-summary': 75, matching: 85, results: 100, done: 100 };
+const STEP_PROGRESS: Record<Step, number> = { welcome: 0, closet: 20, processing: 30, review: 35, 'review-summary': 45, inspiration: 70, done: 100 };
 
 const Onboarding = () => {
   const { user, profile, completeOnboarding, updateOnboardingStep } = useAuth();
+  const userId = user?.id;
   const navigate = useNavigate();
   const addInspo = useAddInspiration();
   const addClosetItem = useAddClosetItem();
   const { connect: connectPinterest, loading: pinterestLoading } = usePinterestConnect();
+  const pinterestConnected = profile?.pinterest_connected ?? false;
+  const { data: pinterestBoards, isLoading: pinterestBoardsLoading } = usePinterestBoards(pinterestConnected);
+  const { sync: syncPinterestBoard, syncing: pinterestSyncing } = useSyncPinterestBoard();
   const { track } = useAnalytics();
   usePageView('onboarding');
 
-  const [step, setStepRaw] = useState<Step>(profile?.onboarding_step && profile.onboarding_step >= 2 ? 'closet' : 'welcome');
+  const [step, setStepRaw] = useState<Step>(profile?.onboarding_step === 2 ? 'inspiration' : profile?.onboarding_step ? 'closet' : 'welcome');
   const setStep = (s: Step) => {
     track('step_completed', { step: s });
     setStepRaw(s);
@@ -76,14 +76,12 @@ const Onboarding = () => {
   const [editColors, setEditColors] = useState<string[]>([]);
   const [editBrand, setEditBrand] = useState('');
 
-  const [matches, setMatches] = useState<MatchResult[]>([]);
-
   const [aiConsent, setAiConsent] = useState(() => {
-    return user ? hasAIConsent(user.id) : false;
+    return userId ? hasAIConsent(userId) : false;
   });
   useEffect(() => {
-    setAiConsent(user ? hasAIConsent(user.id) : false);
-  }, [user?.id]);
+    setAiConsent(userId ? hasAIConsent(userId) : false);
+  }, [userId]);
   const toggleAiConsent = () => {
     if (!user) return;
     const next = !aiConsent;
@@ -132,7 +130,7 @@ const Onboarding = () => {
   };
 
   const handleUploadInspo = async () => {
-    if (!user || inspoFiles.length === 0) return;
+    if (!user || inspoFiles.length === 0) return [];
     setInspoUploading(true);
     const ids: { id: string; image_url: string }[] = [];
     for (const file of inspoFiles) {
@@ -142,9 +140,19 @@ const Onboarding = () => {
         ids.push({ id: result.id, image_url: imageUrl });
       } catch (err) { console.error('Inspo upload error:', err); }
     }
-    setUploadedInspoIds(ids);
+    setUploadedInspoIds(previous => [...previous, ...ids.filter(item => !previous.some(existing => existing.id === item.id))]);
     setInspoUploading(false);
     if (ids.length > 0) toast({ title: `${ids.length} inspiration photos added` });
+    return ids;
+  };
+
+  const handleSyncPinterestBoard = async (boardId: string, boardName: string) => {
+    try {
+      const result = await syncPinterestBoard(boardId);
+      toast(getPinterestSyncNotice(boardName, result));
+    } catch (err: any) {
+      toast({ title: 'Sync failed', description: err.message, variant: 'destructive' });
+    }
   };
 
   const handleSaveInspoUrl = async () => {
@@ -219,7 +227,7 @@ const Onboarding = () => {
 
     setClosetItems([...updated]);
     setReviewIndex(0);
-    await updateOnboardingStep(3);
+    await updateOnboardingStep(1);
     setStep('review');
   };
 
@@ -263,7 +271,7 @@ const Onboarding = () => {
     setEditMode(true);
   };
 
-  const handleSaveAndMatch = async () => {
+  const handleSaveCloset = async () => {
     if (!user) return;
     if (!await ensureAIConsent(user.id)) return;
     setClosetSaving(true);
@@ -274,7 +282,7 @@ const Onboarding = () => {
       try {
         const { data } = await runAIRequest(user.id, () => supabase.functions.invoke('remove-background', { body: { image_url: finalUrl } }));
         if (data?.cleaned_url) finalUrl = data.cleaned_url;
-      } catch {}
+      } catch { /* Keep the original image when background cleanup is unavailable. */ }
       try {
         const result = await addClosetItem.mutateAsync({ user_id: user.id, name: item.name, category: item.category, image_url: finalUrl, colors: item.colors, brand: item.brand });
         ids.push(result.id);
@@ -282,19 +290,22 @@ const Onboarding = () => {
     }
     setSavedItemIds(ids);
     setClosetSaving(false);
-    if (uploadedInspoIds.length > 0 && ids.length > 0) {
-      setStep('matching');
-      const allMatches: MatchResult[] = [];
-      for (const inspo of uploadedInspoIds.slice(0, 5)) {
-        try {
-          const { data } = await runAIRequest(user.id, () => supabase.functions.invoke('auto-match', { body: { inspiration_id: inspo.id, user_id: user.id } }));
-          if (data?.look) allMatches.push({ lookName: data.look.name, occasion: data.look.occasion||'', itemIds: data.look.closet_item_ids||[], itemNames: data.look.item_names||[], inspirationId: inspo.id, reasoning: data.look.reasoning||'' });
-        } catch (err) { console.error('Match error:', err); }
-      }
-      setMatches(allMatches);
-      await updateOnboardingStep(5);
-      setStep(allMatches.length > 0 ? 'results' : 'done');
-    } else { setStep('done'); }
+    await updateOnboardingStep(2);
+    setStep('inspiration');
+  };
+
+  const handleInspirationNext = async () => {
+    if (!user) return;
+    const newlyUploaded = inspoFiles.length > 0 ? await handleUploadInspo() : [];
+    const inspirationIds = [...uploadedInspoIds, ...newlyUploaded]
+      .filter((item, index, all) => all.findIndex(other => other.id === item.id) === index);
+    if (inspirationIds.length > 0) {
+      await completeOnboarding();
+      navigate(`/inspiration/${inspirationIds[0].id}?auto=1`);
+    } else {
+      await completeOnboarding();
+      navigate('/inspiration');
+    }
   };
 
   const handleFinish = async () => { await completeOnboarding(); navigate('/dashboard'); };
@@ -323,8 +334,8 @@ const Onboarding = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   {[
-                    { emoji: '📸', title: 'Inspire', desc: 'Add outfit ideas' },
                     { emoji: '👗', title: 'Closet', desc: 'Upload clothes' },
+                    { emoji: '📸', title: 'Inspire', desc: 'Add outfit ideas' },
                     { emoji: '✨', title: 'Match', desc: 'AI creates looks' },
                   ].map(s => (
                     <div key={s.title} className="p-4 rounded-lg bg-card border border-border">
@@ -347,7 +358,7 @@ const Onboarding = () => {
                       <span className="text-xs text-foreground">I am 18 or older and allow Google Gemini to process the data described above.</span>
                     </button>
                   </div>
-                  <Button className="w-full" size="lg" disabled={!aiConsent} onClick={async () => { await updateOnboardingStep(1); setStep('inspiration'); }}>
+                  <Button className="w-full" size="lg" disabled={!aiConsent} onClick={async () => { await updateOnboardingStep(1); setStep('closet'); }}>
                     Get Started <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                   <button className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full" onClick={handleFinish}>
@@ -360,9 +371,7 @@ const Onboarding = () => {
             {/* INSPIRATION — All three options on one screen */}
             {step === 'inspiration' && (
               <motion.div key="inspiration" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-5">
-                <button onClick={() => setStep('welcome')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </button>
+                <p className="flex items-center gap-1.5 text-sm text-primary"><Check className="w-4 h-4" /> Closet saved</p>
 
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground">Add Inspiration</h2>
@@ -384,14 +393,10 @@ const Onboarding = () => {
                       </Button>
                     </div>
                   ) : (
-                    <label className="block cursor-pointer">
-                      <div className="border-2 border-dashed border-border rounded-lg p-5 text-center hover:border-primary/40 transition-colors">
-                        <ImageIcon className="w-6 h-6 text-muted-foreground mx-auto mb-1.5" />
-                        <p className="text-sm font-medium text-foreground">Tap to upload photos</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Screenshots, saved images, magazine photos</p>
-                      </div>
-                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} />
-                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="cursor-pointer rounded-lg border border-border p-4 text-center min-h-24 flex flex-col items-center justify-center"><CameraIcon className="w-6 h-6 text-primary mb-2" /><span className="text-sm font-medium">Take photo</span><input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInspoFiles} /></label>
+                      <label className="cursor-pointer rounded-lg border border-border p-4 text-center min-h-24 flex flex-col items-center justify-center"><ImageIcon className="w-6 h-6 text-primary mb-2" /><span className="text-sm font-medium">Upload images</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleInspoFiles} /></label>
+                    </div>
                   )}
                   {inspoPreviews.length > 0 && (
                     <div className="space-y-1.5">
@@ -442,7 +447,7 @@ const Onboarding = () => {
                 {/* Option 3: Sync Pinterest */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">3 · Sync Pinterest</p>
-                  <Button
+                  {!pinterestConnected ? <Button
                     variant="outline"
                     className="w-full h-auto py-4 flex items-center gap-3"
                     onClick={connectPinterest}
@@ -458,18 +463,15 @@ const Onboarding = () => {
                       <p className="text-xs text-muted-foreground">Import pins from your boards</p>
                     </div>
                     {pinterestLoading && <Loader2 className="w-4 h-4 animate-spin ml-auto" />}
-                  </Button>
+                  </Button> : pinterestBoardsLoading ? <div className="py-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin" /></div> : pinterestBoards?.length ? <div className="space-y-2">{pinterestBoards.map(board => <div key={board.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"><div className="min-w-0"><p className="text-sm font-medium truncate">{board.name}</p><p className="text-xs text-muted-foreground">{board.pin_count} pins</p></div><Button size="sm" variant="outline" disabled={pinterestSyncing} onClick={() => void handleSyncPinterestBoard(board.id, board.name)}>{pinterestSyncing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sync'}</Button></div>)}</div> : <p className="text-sm text-muted-foreground">Pinterest is connected. No boards were found.</p>}
                 </div>
 
                 {/* Next button */}
                 <div className="pt-2">
-                  <Button className="w-full" size="lg" disabled={inspoUploading} onClick={async () => {
-                    if (inspoFiles.length > 0) await handleUploadInspo();
-                    await updateOnboardingStep(2);
-                    setStep('closet');
-                  }}>
-                    {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Next <ArrowRight className="w-4 h-4 ml-2" /></>}
+                  <Button className="w-full" size="lg" disabled={inspoUploading} onClick={() => void handleInspirationNext()}>
+                    {inspoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : <>Create my first look <ArrowRight className="w-4 h-4 ml-2" /></>}
                   </Button>
+                  <button type="button" className="w-full text-xs text-muted-foreground" onClick={() => setStep('done')}>Skip inspiration for now</button>
                 </div>
               </motion.div>
             )}
@@ -477,7 +479,7 @@ const Onboarding = () => {
             {/* CLOSET */}
             {step === 'closet' && (
               <motion.div key="closet" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                <button onClick={() => setStep('inspiration')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setStep('welcome')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
                 <div>
@@ -496,14 +498,10 @@ const Onboarding = () => {
                     </Button>
                   </div>
                 ) : (
-                  <label className="block cursor-pointer">
-                    <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/40 transition-colors">
-                      <ShirtIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm font-medium text-foreground">Tap to upload</p>
-                      <p className="text-xs text-muted-foreground mt-1">One item per photo · Up to 50</p>
-                    </div>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} />
-                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="cursor-pointer rounded-lg border border-border p-5 text-center min-h-28 flex flex-col items-center justify-center"><CameraIcon className="w-7 h-7 text-primary mb-2" /><span className="text-sm font-medium">Take item photo</span><input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleClosetFileSelect} /></label>
+                    <label className="cursor-pointer rounded-lg border border-border p-5 text-center min-h-28 flex flex-col items-center justify-center"><ShirtIcon className="w-7 h-7 text-primary mb-2" /><span className="text-sm font-medium">Upload items</span><span className="text-xs text-muted-foreground mt-1">Up to 50</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleClosetFileSelect} /></label>
+                  </div>
                 )}
                 {closetPreviews.length > 0 && (
                   <div className="space-y-2">
@@ -635,46 +633,8 @@ const Onboarding = () => {
                   <span>✏️ {reviewStats.edited}</span>
                   {reviewStats.skipped > 0 && <span>⏭ {reviewStats.skipped}</span>}
                 </div>
-                <Button className="w-full" size="lg" disabled={closetSaving} onClick={handleSaveAndMatch}>
-                  {closetSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
-                </Button>
-              </motion.div>
-            )}
-
-            {/* MATCHING */}
-            {step === 'matching' && (
-              <motion.div key="matching" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center space-y-6">
-                <Sparkles className="w-10 h-10 text-primary mx-auto animate-pulse" />
-                <div>
-                  <h2 className="font-display text-2xl font-bold text-foreground">Creating Outfits...</h2>
-                  <p className="text-sm text-muted-foreground mt-2">Matching inspiration to your closet</p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* RESULTS */}
-            {step === 'results' && (
-              <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-                <div className="text-center">
-                  <h2 className="font-display text-2xl font-bold text-foreground">Your Outfits Are Ready</h2>
-                  <p className="text-sm text-muted-foreground mt-2">{matches.length} looks created</p>
-                </div>
-                <div className="space-y-3">
-                  {matches.map((m, i) => (
-                    <div key={i} className="p-4 rounded-lg border border-border bg-card space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-foreground">{m.lookName}</p>
-                        {m.occasion && <Badge variant="secondary" className="text-[10px] capitalize">{m.occasion}</Badge>}
-                      </div>
-                      <p className="text-xs text-muted-foreground italic">"{m.reasoning}"</p>
-                      <div className="flex flex-wrap gap-1">
-                        {m.itemNames.map((name, j) => <Badge key={j} variant="outline" className="text-[10px]">{name}</Badge>)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button className="w-full" size="lg" onClick={handleFinish}>
-                  Go to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
+                <Button className="w-full" size="lg" disabled={closetSaving} onClick={handleSaveCloset}>
+                  {closetSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <>Save closet & add inspiration <ArrowRight className="w-4 h-4 ml-2" /></>}
                 </Button>
               </motion.div>
             )}

@@ -29,6 +29,7 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budge
   const [category, setCategory] = useState<ShopCategory | undefined>(initialCategory);
   const [currency, setCurrency] = useState<ShopCurrency>(() => SHOP_CURRENCIES.includes(profile?.currency as ShopCurrency) ? profile.currency as ShopCurrency : 'GBP');
   const [budget, setBudget] = useState<[number, number] | null>(null);
+  const [size, setSize] = useState('');
   const [sort, setSort] = useState<ShopSort>('recommended');
   const [savedOnly, setSavedOnly] = useState(false);
   const [selected, setSelected] = useState<ShopProduct | null>(null);
@@ -36,10 +37,17 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budge
   const products = useMemo(() => data?.products ?? [], [data?.products]);
   const maxPrice = useMemo(() => Math.max(500, Math.ceil(products.filter(p => p.currency === (budgetLimit?.currency ?? currency)).reduce((max, p) => Math.max(max, p.price), 0) / 50) * 50), [products, currency, budgetLimit?.currency]);
   const effectiveCurrency = budgetLimit?.currency ?? currency;
+  const availableSizes = useMemo(() => [...new Set(products
+    .filter(product => product.currency === effectiveCurrency && (!category || product.category === category))
+    .flatMap(product => product.sizes.map(value => value.trim()).filter(Boolean)))]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), [products, effectiveCurrency, category]);
   const range: [number, number] = budget ? [Math.min(budget[0], maxPrice), Math.min(budget[1], maxPrice)] : [0, maxPrice];
-  const filtered = selectProducts(products, { query, category, currency: effectiveCurrency, minPrice: range[0], maxPrice: Math.min(range[1], budgetLimit?.max ?? Infinity), sort, savedIds: savedOnly ? savedIds : undefined });
+  const filtered = selectProducts(products, { query, category, currency: effectiveCurrency, minPrice: range[0], maxPrice: Math.min(range[1], budgetLimit?.max ?? Infinity), size: size || undefined, sort, savedIds: savedOnly ? savedIds : undefined });
 
-  useEffect(() => { setLimit(48); }, [query, category, currency, budget, sort, savedOnly, budgetLimit?.max, budgetLimit?.currency]);
+  useEffect(() => { setLimit(48); }, [query, category, currency, budget, size, sort, savedOnly, budgetLimit?.max, budgetLimit?.currency]);
+  useEffect(() => {
+    if (size && !availableSizes.includes(size)) setSize('');
+  }, [availableSizes, size]);
 
   const onSave = (id: string) => {
     track('shop_product_saved', { product_id: id, saved: !savedIds.has(id) });
@@ -50,7 +58,7 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budge
     track('shop_product_viewed', { product_id: product.id, retailer_id: product.retailerId });
   };
   const resetFilters = () => {
-    setQuery(''); setCategory(undefined); setBudget(null); setSort('recommended'); setSavedOnly(false);
+    setQuery(''); setCategory(undefined); setBudget(null); setSize(''); setSort('recommended'); setSavedOnly(false);
   };
 
   if (isLoading) return <div role="status" aria-label="Loading shop" className="grid grid-cols-2 gap-3 py-4">{[0, 1, 2, 3].map(i => <div key={i} className="rounded-xl bg-secondary/50 aspect-[3/4] animate-pulse" />)}</div>;
@@ -60,7 +68,7 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budge
   return <div className="space-y-5">
     <div className="flex items-center gap-2">
       <div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Search shop" value={query} onChange={event => setQuery(event.target.value)} maxLength={200} placeholder="Search pieces, brands or colours" className="pl-9 min-h-11" /></div>
-      <Button variant={savedOnly ? 'default' : 'outline'} onClick={() => setSavedOnly(!savedOnly)} aria-pressed={savedOnly} aria-label="Show saved products" className="min-h-11 gap-1.5"><Heart className={`w-4 h-4 ${savedOnly ? 'fill-current' : ''}`} /><span className="hidden sm:inline">Saved</span><span>{savedIds.size}</span></Button>
+      <Button variant={savedOnly ? 'default' : 'outline'} onClick={() => setSavedOnly(!savedOnly)} aria-pressed={savedOnly} aria-label="Show saved products" className="min-h-11 gap-1.5"><Heart className={`w-4 h-4 ${savedOnly ? 'fill-current' : ''}`} /><span>Saved</span><span>{savedIds.size}</span></Button>
     </div>
     <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Product categories">
       {[undefined, ...SHOP_CATEGORIES].map(value => <button type="button" key={value ?? 'all'} onClick={() => setCategory(value)} aria-pressed={category === value} className={`shrink-0 px-3 py-2 rounded-full border text-xs capitalize ${category === value ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground'}`}>{value ?? 'All pieces'}</button>)}
@@ -69,7 +77,13 @@ const ShopBrowser = ({ initialQuery = '', initialCategory, enabled = true, budge
       <PriceFilter min={0} max={maxPrice} value={range} onChange={setBudget} currency={effectiveCurrency === 'GBP' ? '£' : effectiveCurrency === 'USD' ? '$' : '€'} />
       <div className="flex gap-3 items-center justify-between flex-wrap">
         <p className="text-xs text-muted-foreground" role="status">{filtered.length} {filtered.length === 1 ? 'piece' : 'pieces'}{savedOnly ? ' saved on this device' : ''}</p>
-        <div className="flex items-center gap-2"><select aria-label="Shop currency" disabled={Boolean(budgetLimit)} value={effectiveCurrency} onChange={event => { setCurrency(event.target.value as ShopCurrency); setBudget(null); }} className="bg-background border border-border rounded px-2 py-1.5 text-xs">{SHOP_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}</select><SortDropdown value={sort} onChange={setSort} /></div>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <select aria-label="Filter by size" value={size} onChange={event => setSize(event.target.value)} className="bg-background border border-border rounded px-2 py-1.5 text-xs min-h-9" disabled={!availableSizes.length}>
+            <option value="">All sizes</option>
+            {availableSizes.map(value => <option key={value} value={value}>Size {value}</option>)}
+          </select>
+          <select aria-label="Shop currency" disabled={Boolean(budgetLimit)} value={effectiveCurrency} onChange={event => { setCurrency(event.target.value as ShopCurrency); setBudget(null); }} className="bg-background border border-border rounded px-2 py-1.5 text-xs min-h-9">{SHOP_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}</select><SortDropdown value={sort} onChange={setSort} />
+        </div>
       </div>
     </div>
     {filtered.length ? <>

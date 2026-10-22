@@ -32,6 +32,7 @@ export default function TryOn() {
   const [avatarSettings, setAvatarSettings] = useState<AvatarSettings>(DEFAULT_AVATAR_SETTINGS);
   const [settings, setSettings] = useState<AvatarSettings>(DEFAULT_AVATAR_SETTINGS);
   const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
   const [consent, setConsent] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [source, setSource] = useState<'closet' | 'shop'>('closet');
@@ -57,7 +58,7 @@ export default function TryOn() {
     const requestId = generation.current;
     loadAvatar(userId).then(record => {
       if (!active.current || generation.current !== requestId || !record) return;
-      setAvatar(record.image); setAvatarSettings(record.settings); setSettings(record.settings); setHeight(record.settings.heightCm?.toString() ?? ''); setSaved(true);
+      setAvatar(record.image); setAvatarSettings(record.settings); setSettings(record.settings); setHeight(record.settings.heightCm?.toString() ?? ''); setWeight(record.settings.weightKg?.toString() ?? ''); setSaved(true);
     }).catch(() => { if (active.current) setNotice('Device storage is unavailable. You can still preview during this visit.'); })
       .finally(() => { if (active.current) setLoadingAvatar(false); });
     return () => { active.current = false; generation.current += 1; };
@@ -90,7 +91,7 @@ export default function TryOn() {
     const requestId = ++generation.current;
     setError(''); setNotice(''); setResult(null); setBusy(true);
     try {
-      const validated = avatarSettingsSchema.parse({ ...settings, heightCm: height.trim() ? Number(height) : undefined });
+      const validated = avatarSettingsSchema.parse({ ...settings, heightCm: height.trim() ? Number(height) : undefined, weightKg: weight.trim() ? Number(weight) : undefined });
       const garments = action === 'avatar' ? [] : await Promise.all(picked.map(async piece => ({ name: piece.name.slice(0, 100), category: piece.category, image: await prepareGarmentPhoto(piece.imageUrl) })));
       if (!active.current || !allowed.current || requestId !== generation.current) return;
       const response = await render.mutateAsync({ action, person, settings: validated, garments, consent: { version: TRY_ON_CONSENT_VERSION, allowed: true, adultAndOwnPhoto: true } });
@@ -110,7 +111,7 @@ export default function TryOn() {
   const clear = async () => {
     if (!user) return;
     generation.current += 1; setBusy(true); setError('');
-    try { await deleteAvatar(user.id); setAvatar(null); setResult(null); setSourcePhoto(null); setSaved(false); setSettings(DEFAULT_AVATAR_SETTINGS); setHeight(''); setSelectedIds([]); changeConsent(false); if (uploadRef.current) uploadRef.current.value = ''; setNotice('Your avatar and photos have been removed from this device. This does not delete processing records held by Google.'); }
+    try { await deleteAvatar(user.id); setAvatar(null); setResult(null); setSourcePhoto(null); setSaved(false); setSettings(DEFAULT_AVATAR_SETTINGS); setHeight(''); setWeight(''); setSelectedIds([]); changeConsent(false); if (uploadRef.current) uploadRef.current.value = ''; setNotice('Your avatar and photos have been removed from this device. This does not delete processing records held by Google.'); }
     catch { setError('The saved avatar could not be removed. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -134,8 +135,11 @@ export default function TryOn() {
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4"><div><p className="text-xs uppercase tracking-wider text-primary">01 · Create your likeness</p><h2 className="text-2xl mt-1">Meet your avatar</h2></div><p className="text-sm text-muted-foreground">Choose a clear, full-length photo of yourself in everyday clothing, facing the camera. Use a photo with one person and a plain background. JPG, PNG or WebP, up to 8 MB.</p>
           <Label htmlFor="avatar-photo" className="flex items-center gap-2"><Camera className="w-4 h-4" />Your reference photo</Label><Input ref={uploadRef} id="avatar-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={!renderingEnabled || working || loadingAvatar} onChange={event => void choosePhoto(event.target.files?.[0])} />
           {sourcePhoto && <Button variant="ghost" disabled={working} onClick={() => { generation.current += 1; setSourcePhoto(null); if (uploadRef.current) uploadRef.current.value = ''; }}>Remove reference photo</Button>}
-          <div className="grid sm:grid-cols-2 gap-4"><div className="space-y-2"><Label htmlFor="avatar-height">Height in cm (optional)</Label><Input id="avatar-height" type="number" min="120" max="220" step="1" placeholder="e.g. 163" value={height} disabled={working} onChange={event => setHeight(event.target.value)} /></div><div className="space-y-2"><Label htmlFor="avatar-build">Build</Label><select id="avatar-build" className="w-full border rounded bg-background p-2 min-h-11 text-sm" value={settings.build} disabled={working} onChange={event => setSettings({ ...settings, build: event.target.value as AvatarSettings['build'] })}>{[['as-photographed', 'Keep as photographed'], ['slender', 'Slender'], ['athletic', 'Athletic'], ['curvy', 'Curvy'], ['broad', 'Broad']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></div>
-          <div className="space-y-2"><Label htmlFor="avatar-hair">Hair</Label><select id="avatar-hair" className="w-full border rounded bg-background p-2 min-h-11 text-sm" value={settings.hair} disabled={working} onChange={event => setSettings({ ...settings, hair: event.target.value as AvatarSettings['hair'] })}>{[['as-photographed', 'Keep as photographed'], ['short', 'Short'], ['shoulder-length', 'Shoulder length'], ['long', 'Long'], ['tied-back', 'Tied back']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><p className="text-xs text-muted-foreground">Customisations apply when you create a new avatar from a reference photo. Your face and skin tone are preserved.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label htmlFor="avatar-height">Height (cm)</Label><Input id="avatar-height" type="number" inputMode="numeric" min="120" max="220" step="1" placeholder="e.g. 163" value={height} disabled={working} onChange={event => setHeight(event.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="avatar-weight">Weight (kg)</Label><Input id="avatar-weight" type="number" inputMode="numeric" min="30" max="300" step="1" placeholder="e.g. 65" value={weight} disabled={working} onChange={event => setWeight(event.target.value)} /></div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4"><div className="space-y-2"><Label htmlFor="avatar-build">Build</Label><select id="avatar-build" className="w-full border rounded bg-background p-2 min-h-11 text-sm" value={settings.build} disabled={working} onChange={event => setSettings({ ...settings, build: event.target.value as AvatarSettings['build'] })}>{[['as-photographed', 'Keep as photographed'], ['slender', 'Slender'], ['athletic', 'Athletic'], ['curvy', 'Curvy'], ['broad', 'Broad']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><div className="space-y-2"><Label htmlFor="avatar-hair">Hair</Label><select id="avatar-hair" className="w-full border rounded bg-background p-2 min-h-11 text-sm" value={settings.hair} disabled={working} onChange={event => setSettings({ ...settings, hair: event.target.value as AvatarSettings['hair'] })}>{[['as-photographed', 'Keep as photographed'], ['short', 'Short'], ['shoulder-length', 'Shoulder length'], ['long', 'Long'], ['tied-back', 'Tied back']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></div><p className="text-xs text-muted-foreground">Height and weight are optional proportion references. Your photo remains the main reference, and your face and skin tone are preserved.</p>
           <Button className="w-full gap-2" disabled={!renderingEnabled || !sourcePhoto || !consent || working || loadingAvatar} onClick={() => run('avatar')}><UserRound className="w-4 h-4" />{avatar ? 'Create a new avatar' : 'Create my avatar'}</Button>
         </section>
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4"><div><p className="text-xs uppercase tracking-wider text-primary">02 · Put a look together</p><h2 className="text-2xl mt-1">What would you like to try?</h2></div><div className="flex gap-2"><Button variant={source === 'closet' ? 'default' : 'outline'} aria-pressed={source === 'closet'} disabled={working} onClick={() => setSource('closet')}>My closet</Button><Button variant={source === 'shop' ? 'default' : 'outline'} aria-pressed={source === 'shop'} disabled={working} onClick={() => setSource('shop')}>Shop finds</Button></div>

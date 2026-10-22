@@ -16,8 +16,8 @@ const PinterestCallback = () => {
     } else {
       toast({ title: 'Connection Failed', description: 'Could not connect Pinterest. Please try again.', variant: 'destructive' });
     }
-    navigate('/inspiration/add', { replace: true });
-  }, [searchParams, navigate]);
+    navigate(profile?.onboarding_completed ? '/inspiration/add' : '/onboarding', { replace: true });
+  }, [searchParams, navigate, profile?.onboarding_completed]);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">

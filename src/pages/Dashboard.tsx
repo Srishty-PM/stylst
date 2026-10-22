@@ -14,16 +14,18 @@ import { Plus, Layers, Sparkles, CalendarDays, ShirtIcon, Heart, ImageIcon, Chec
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { usePageView } from '@/hooks/useAnalytics';
+import { useSavedAvatar } from '@/hooks/useSavedAvatar';
 const heroImage = new URL('@/assets/landing-hero.jpg', import.meta.url).href;
 
 const Dashboard = () => {
   usePageView('dashboard');
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
   const { data: closetItems, isLoading: closetLoading } = useClosetItems('All');
   const { data: inspirations, isLoading: inspoLoading } = useInspirations();
   const { data: looks, isLoading: looksLoading } = useLooks();
+  const { data: savedAvatar } = useSavedAvatar(user?.id);
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
@@ -60,7 +62,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       {/* Hero Banner */}
-      <motion.section
+      {!NEXT_RELEASE_ENABLED && <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -83,7 +85,7 @@ const Dashboard = () => {
             Sync your boards, digitize your wardrobe, and let Stylst create outfits you can wear today.
           </p>
         </div>
-      </motion.section>
+      </motion.section>}
 
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -91,7 +93,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">{format(today, 'EEEE, MMMM d, yyyy')}</p>
       </motion.div>
 
-      {NEXT_RELEASE_ENABLED && !isLoading && <StyleStart closetCount={closetCount} inspirationCount={inspoCount} />}
+      {NEXT_RELEASE_ENABLED && !isLoading && <StyleStart closetCount={closetCount} inspirationCount={inspoCount} avatarReady={Boolean(savedAvatar)} />}
 
       {/* Today's Outfit */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
