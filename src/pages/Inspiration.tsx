@@ -7,7 +7,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useInspirations, useDeleteInspiration } from '@/hooks/useInspirations';
 import { toast } from '@/hooks/use-toast';
-import AutoMatchDialog from '@/components/AutoMatchDialog';
 import { usePageView } from '@/hooks/useAnalytics';
 
 const Inspiration = () => {
@@ -15,7 +14,6 @@ const Inspiration = () => {
   const navigate = useNavigate();
   const { data: items = [], isLoading } = useInspirations();
   const deleteInspo = useDeleteInspiration();
-  const [autoMatchItem, setAutoMatchItem] = useState<{ id: string; image_url: string } | null>(null);
   usePageView('inspiration');
 
   const filtered = tab === 'all' ? items :
@@ -36,7 +34,7 @@ const Inspiration = () => {
   const handleMatch = (e: React.MouseEvent, item: { id: string; image_url: string }) => {
     e.preventDefault();
     e.stopPropagation();
-    setAutoMatchItem(item);
+    navigate(`/inspiration/${item.id}?auto=1`);
   };
 
   return (
@@ -120,15 +118,6 @@ const Inspiration = () => {
         </div>
       )}
 
-      {autoMatchItem && (
-        <AutoMatchDialog
-          open={!!autoMatchItem}
-          onOpenChange={(open) => !open && setAutoMatchItem(null)}
-          inspirationId={autoMatchItem.id}
-          inspirationImage={autoMatchItem.image_url}
-          autoStart
-        />
-      )}
     </div>
   );
 };

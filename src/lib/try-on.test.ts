@@ -28,8 +28,10 @@ describe('try-on isolation and input contract', () => {
   });
   it('accepts the default unchanged likeness but rejects invalid edits and mislabelled images', () => {
     expect(parseRenderRequest(request()).settings.build).toBe('as-photographed');
-    expect(avatarSettingsSchema.safeParse({ ...request().settings, heightCm: 163 }).success).toBe(true);
+    expect(avatarSettingsSchema.safeParse({ ...request().settings, heightCm: 163, weightKg: 65 }).success).toBe(true);
+    expect(parseRenderRequest({ ...request(), settings: { ...request().settings, heightCm: 163, weightKg: 65 } }).settings).toMatchObject({ heightCm: 163, weightKg: 65 });
     for (const heightCm of [0, 119, 221, 163.5, NaN]) expect(() => parseRenderRequest({ ...request(), settings: { ...request().settings, heightCm } })).toThrow();
+    for (const weightKg of [0, 29, 301, 65.5, NaN]) expect(() => parseRenderRequest({ ...request(), settings: { ...request().settings, weightKg } })).toThrow();
     expect(() => parseRenderRequest({ ...request(), person: { mimeType: 'image/jpeg', data: image.data } })).toThrow();
     expect(() => parseRenderRequest({ ...request(), person: { mimeType: 'image/png', data: 'https://untrusted.example/image' } })).toThrow();
   });

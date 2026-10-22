@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { NEXT_RELEASE_ENABLED } from '@/lib/next-release';
 import type { StylistOutfit } from '@/lib/ai-stylist';
+import { AvatarTryOnDialog } from '@/components/try-on/AvatarLookPanel';
 
 const tileClass = (count: number, index: number) => {
   if (count === 1) return 'col-span-2 row-span-2';
@@ -22,7 +23,9 @@ export default function VisualOutfitCard({ outfit, saved, saving, onSave }: {
   const tryOnItemIds = outfit.items
     .filter(item => ['tops', 'bottoms', 'dresses', 'outerwear'].includes(item.category.toLowerCase()))
     .map(item => item.id);
-  const tryOnQuery = new URLSearchParams({ items: tryOnItemIds.join(',') });
+  const tryOnGarments = outfit.items
+    .filter(item => tryOnItemIds.includes(item.id))
+    .map(item => ({ id: item.id, name: item.name, category: item.category, imageUrl: item.imageUrl }));
   return <Card className="overflow-hidden border-border shadow-sm">
     <div className="grid grid-cols-2 grid-rows-2 gap-px aspect-square bg-border" aria-label={`${outfit.name} outfit photos`}>
       {outfit.items.map((item, index) => <Link key={item.id} to={`/closet/${item.id}`} className={`relative overflow-hidden bg-card ${tileClass(outfit.items.length, index)}`}>
@@ -47,7 +50,7 @@ export default function VisualOutfitCard({ outfit, saved, saving, onSave }: {
         <Button variant="outline" disabled={saved || saving} onClick={onSave} className="gap-2">
           {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}{saved ? 'Saved' : 'Save look'}
         </Button>
-        {NEXT_RELEASE_ENABLED && tryOnItemIds.length ? <Button asChild className="gap-2"><Link to={`/try-on?${tryOnQuery}`}><Shirt className="w-4 h-4" />Try on</Link></Button> : <Button disabled className="gap-2"><Shirt className="w-4 h-4" />Try on</Button>}
+        {NEXT_RELEASE_ENABLED && tryOnItemIds.length ? <AvatarTryOnDialog garments={tryOnGarments} /> : <Button disabled className="gap-2"><Shirt className="w-4 h-4" />Try on</Button>}
       </div>
     </CardContent>
   </Card>;

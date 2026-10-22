@@ -60,6 +60,13 @@ describe('in-app shop journey', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByRole('button', { name: 'View Blue midi dress' })).toBeVisible();
   });
+  it('filters the retailer feed by an available size', async () => {
+    showShop({ initialCategory: 'outerwear' });
+    await screen.findByRole('button', { name: 'View Beige wool coat' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter by size' }), { target: { value: 'M' } });
+    expect(screen.getByRole('button', { name: 'View Beige wool coat' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'View Black raincoat' })).not.toBeInTheDocument();
+  });
   it('does not present purchasable products before an approved feed exists', async () => {
     vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ version: 1, updatedAt: null, expiresAt: null, retailers: [], products: [] }) } as Response);
     showShop();

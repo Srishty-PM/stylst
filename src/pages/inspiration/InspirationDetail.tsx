@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInspirations } from '@/hooks/useInspirations';
 import { useAutoMatch, AutoMatchResult } from '@/hooks/useAutoMatch';
@@ -25,12 +25,15 @@ import { format } from 'date-fns';
 import ItemSwapSheet from '@/components/ItemSwapSheet';
 import type { MissingItem } from '@/hooks/useAutoMatch';
 import ShoppingSheet, { ShopMissingItem } from '@/components/ShoppingSheet';
+import { AvatarLookPanel } from '@/components/try-on/AvatarLookPanel';
+import { NEXT_RELEASE_ENABLED } from '@/lib/next-release';
 
 type PageState = 'idle' | 'analyzing' | 'results' | 'saving' | 'saved';
 
 const InspirationDetail = () => {
   const { inspirationId } = useParams<{ inspirationId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: inspirations = [] } = useInspirations();
   const autoMatch = useAutoMatch();
@@ -48,8 +51,9 @@ const InspirationDetail = () => {
   const [scheduleDate, setScheduleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [savedLookId, setSavedLookId] = useState<string | null>(null);
   const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
+  const autoStarted = useRef(false);
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!inspirationId) return;
     setPageState('analyzing');
     try {
@@ -63,7 +67,14 @@ const InspirationDetail = () => {
       toast({ title: 'Analysis failed', description: err.message, variant: 'destructive' });
       setPageState('idle');
     }
-  };
+  }, [autoMatch, inspirationId]);
+
+  useEffect(() => {
+    if (!inspiration || searchParams.get('auto') !== '1' || autoStarted.current || pageState !== 'idle') return;
+    autoStarted.current = true;
+    setSearchParams({}, { replace: true });
+    void handleAnalyze();
+  }, [handleAnalyze, inspiration, pageState, searchParams, setSearchParams]);
 
   const handleSaveOutfit = async () => {
     if (!inspirationId || !matchResult || !user) return;
@@ -136,6 +147,7 @@ const InspirationDetail = () => {
   const completionPct = totalItems > 0 ? Math.round((matchedCount / totalItems) * 100) : 100;
   const usedItemIds = matchedItems.map(m => m.id);
   const swapTarget = swapIndex !== null ? matchedItems[swapIndex] : null;
+  const avatarGarments = matchedItems.map(item => ({ id: item.id, name: item.name, category: item.category, imageUrl: item.image_url }));
 
   return (
     <div className="space-y-6 pb-8">
@@ -149,7 +161,7 @@ const InspirationDetail = () => {
 
       {/* Split layout when results available */}
       {(pageState === 'results' || pageState === 'saving' || pageState === 'saved') && matchResult ? (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className={`grid gap-6 items-start ${NEXT_RELEASE_ENABLED ? 'md:grid-cols-2 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.05fr)_minmax(240px,0.75fr)]' : 'md:grid-cols-2'}`}>
           {/* Left: Inspiration */}
           <div className="space-y-2">
             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.15em]">Inspiration</p>
@@ -284,7 +296,7 @@ const InspirationDetail = () => {
                   disabled={matchedItems.length < 1}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save to Looks
+                  {missingItems.length ? 'Save Look & Missing List' : 'Save to Looks'}
                 </Button>
               )}
 
@@ -308,6 +320,7 @@ const InspirationDetail = () => {
               )}
             </motion.div>
           </AnimatePresence>
+          {NEXT_RELEASE_ENABLED && <AvatarLookPanel garments={avatarGarments} title="Try your recreation" className="md:col-span-2 xl:col-span-1 xl:sticky xl:top-6" />}
         </div>
       ) : (
         <>

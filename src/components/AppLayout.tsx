@@ -8,7 +8,7 @@ import { NEXT_RELEASE_ENABLED, IS_LOCAL_FEATURE_PREVIEW } from '@/lib/next-relea
 const currentNavItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/closet', icon: ShirtIcon, label: 'Closet' },
-  { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
+  { to: '/inspiration', icon: Sparkles, label: 'Create' },
   { to: '/looks', icon: Heart, label: 'Looks' },
   { to: '/shop', icon: ShoppingBag, label: 'Shop' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
@@ -17,7 +17,7 @@ const currentNavItems = [
 const bottomNavItems = NEXT_RELEASE_ENABLED ? [
   { to: '/dashboard', icon: Home, label: 'Today' },
   { to: '/closet', icon: ShirtIcon, label: 'Closet' },
-  { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
+  { to: '/inspiration', icon: Sparkles, label: 'Create' },
   { to: '/shop', icon: ShoppingBag, label: 'Shop' },
   { to: '/me', icon: UserRound, label: 'Me' },
 ] : currentNavItems;

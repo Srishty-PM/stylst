@@ -109,13 +109,20 @@ export interface ShopFilters {
   currency: ShopCurrency;
   minPrice: number;
   maxPrice: number;
+  size?: string;
   sort: ShopSort;
   savedIds?: Set<string>;
 }
 
 export function selectProducts(products: ShopProduct[], filters: ShopFilters): ShopProduct[] {
   const terms = (filters.query ?? '').toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
-  const scored = products.filter(p => p.currency === filters.currency && (!filters.category || p.category === filters.category) && p.price >= filters.minPrice && p.price <= filters.maxPrice && (!filters.savedIds || filters.savedIds.has(p.id))).map(product => {
+  const requestedSize = filters.size?.trim().toLocaleLowerCase();
+  const scored = products.filter(p => p.currency === filters.currency
+    && (!filters.category || p.category === filters.category)
+    && p.price >= filters.minPrice
+    && p.price <= filters.maxPrice
+    && (!requestedSize || p.sizes.some(size => size.trim().toLocaleLowerCase() === requestedSize))
+    && (!filters.savedIds || filters.savedIds.has(p.id))).map(product => {
     const text = `${product.name} ${product.brand} ${product.category} ${product.colours.join(' ')} ${product.description}`.toLowerCase();
     const score = terms.filter(term => text.includes(term)).length;
     return { product, score };

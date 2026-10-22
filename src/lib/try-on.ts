@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const TRY_ON_CONSENT_VERSION = '2026-10-22-avatar-v1';
 export const avatarSettingsSchema = z.object({
   heightCm: z.number().int().min(120).max(220).optional(),
+  weightKg: z.number().int().min(30).max(300).optional(),
   build: z.enum(['as-photographed', 'slender', 'athletic', 'curvy', 'broad']).default('as-photographed'),
   hair: z.enum(['as-photographed', 'short', 'shoulder-length', 'long', 'tied-back']).default('as-photographed'),
 });

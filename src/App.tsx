@@ -75,6 +75,13 @@ const OnboardingRoute = ({ children }: { children?: React.ReactNode }) => {
   return children ? <>{children}</> : <Onboarding />;
 };
 
+const SignedInRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!user) return <Navigate to="/auth/login" replace />;
+  return <>{children}</>;
+};
+
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, isLoading } = useAuth();
   if (isLoading) return null;
@@ -121,7 +128,7 @@ const AppRoutes = () => (
     <Route path="/install" element={<Install />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
-    <Route path="/pinterest-callback" element={<ProtectedRoute><PinterestCallback /></ProtectedRoute>} />
+    <Route path="/pinterest-callback" element={<SignedInRoute><PinterestCallback /></SignedInRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
