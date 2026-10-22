@@ -1,10 +1,11 @@
 import { Suspense } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, ShirtIcon, Layers, Heart, CalendarDays, ShoppingBag, Sparkles, Settings, LogOut } from 'lucide-react';
+import { Home, ShirtIcon, Layers, Heart, CalendarDays, ShoppingBag, Sparkles, Settings, LogOut, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { NEXT_RELEASE_ENABLED, IS_LOCAL_FEATURE_PREVIEW } from '@/lib/next-release';
 
-const bottomNavItems = [
+const currentNavItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/closet', icon: ShirtIcon, label: 'Closet' },
   { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
@@ -13,8 +14,21 @@ const bottomNavItems = [
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
 ];
 
+const bottomNavItems = NEXT_RELEASE_ENABLED ? [
+  { to: '/dashboard', icon: Home, label: 'Today' },
+  { to: '/closet', icon: ShirtIcon, label: 'Closet' },
+  { to: '/inspiration', icon: Sparkles, label: 'Inspo' },
+  { to: '/shop', icon: ShoppingBag, label: 'Shop' },
+  { to: '/me', icon: UserRound, label: 'Me' },
+] : currentNavItems;
+
 const sidebarItems = [
   ...bottomNavItems,
+  ...(NEXT_RELEASE_ENABLED ? [
+    { to: '/looks', icon: Heart, label: 'Saved looks' },
+    { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
+    { to: '/try-on', icon: UserRound, label: 'Fitting room' },
+  ] : []),
   { to: '/ai-stylist', icon: Sparkles, label: 'AI Stylist' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
@@ -92,6 +106,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       <main className="lg:pl-60 pb-[calc(5rem_+_env(safe-area-inset-bottom))] lg:pb-6">
         <div className="max-w-5xl mx-auto px-6 py-8 lg:px-12">
           <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+            {IS_LOCAL_FEATURE_PREVIEW && <p className="mb-5 rounded-lg border border-primary/30 bg-secondary/30 px-3 py-2 text-xs" role="status">Development preview · features for the next release</p>}
             {children}
           </Suspense>
         </div>
@@ -104,9 +119,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       >
         <div className="flex items-center justify-around py-2">
           {bottomNavItems.map(item => {
-            const isActive = location.pathname.startsWith(item.to);
+            const isActive = location.pathname.startsWith(item.to) || (item.to === '/me' && ['/try-on', '/settings'].some(path => location.pathname.startsWith(path)));
             return (
-              <NavLink key={item.to} to={item.to} className="flex flex-1 min-w-0 flex-col items-center gap-0.5 py-1 px-1">
+              <NavLink key={item.to} to={item.to} className="flex flex-1 min-w-0 min-h-11 flex-col items-center justify-center gap-0.5 py-1 px-1">
                 <item.icon className={cn('w-6 h-6 transition-colors duration-200', isActive ? 'text-primary' : 'text-muted-foreground')} strokeWidth={1.5} />
                 <span className={cn('text-[9px] font-medium tracking-wide uppercase', isActive ? 'text-primary' : 'text-muted-foreground')}>
                   {item.label}

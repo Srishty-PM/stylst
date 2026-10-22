@@ -1,3 +1,5 @@
+import ShopLookSheet from '@/components/shopping/ShopLookSheet';
+import { NEXT_RELEASE_ENABLED } from '@/lib/next-release';
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -96,6 +98,7 @@ const LookDetail = () => {
   const toggleFav = useToggleFavorite();
   const addSchedule = useAddScheduledOutfit();
 
+  const [showLookShop, setShowLookShop] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [shopItem, setShopItem] = useState<ShopMissingItem | null>(null);
@@ -196,6 +199,10 @@ const LookDetail = () => {
           {[look.occasion, look.season, look.created_by_ai && 'AI Styled'].filter(Boolean).join(' · ')}
         </p>
       </div>
+
+      {NEXT_RELEASE_ENABLED && ownedItems.length > 0 && <Button asChild variant="outline" className="w-full my-4"><Link to={`/try-on?${new URLSearchParams({ items: ownedItems.map(item => item.id).join(',') })}`}>Try this look on my avatar</Link></Button>}
+
+      {NEXT_RELEASE_ENABLED && missingItems.length > 0 && <><Button variant="outline" className="w-full mb-4 gap-2" onClick={() => setShowLookShop(true)}><ShoppingBag className="w-4 h-4" />Shop missing pieces ({missingItems.length})</Button><ShopLookSheet open={showLookShop} onOpenChange={setShowLookShop} items={missingItems} lookName={look.name} /></>}
 
       {/* Tabs: Your Items / Missing / Inspiration */}
       <Tabs defaultValue="items" className="w-full">

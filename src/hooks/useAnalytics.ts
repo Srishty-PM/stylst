@@ -1,3 +1,4 @@
+import { IS_LOCAL_FEATURE_PREVIEW } from '@/lib/next-release';
 import { useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,7 +46,7 @@ const sessionId = getSessionId();
 
 // Track session start once per session
 const SESSION_START_KEY = 'stylst_session_started';
-if (!sessionStorage.getItem(SESSION_START_KEY)) {
+if (!IS_LOCAL_FEATURE_PREVIEW && !sessionStorage.getItem(SESSION_START_KEY)) {
   sessionStorage.setItem(SESSION_START_KEY, '1');
   supabase.from('analytics_events').insert({
     device_id: deviceId,
@@ -58,6 +59,7 @@ if (!sessionStorage.getItem(SESSION_START_KEY)) {
 // Flush session_end on tab close
 const sessionStartTime = Date.now();
 window.addEventListener('beforeunload', () => {
+  if (IS_LOCAL_FEATURE_PREVIEW) return;
   const duration = Math.round((Date.now() - sessionStartTime) / 1000);
   // Use fetch with keepalive for reliable delivery on page close
   const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/analytics_events`;
@@ -85,6 +87,7 @@ export function useAnalytics() {
 
   const track = useCallback(
     (eventType: EventType, eventData?: Record<string, unknown>) => {
+      if (IS_LOCAL_FEATURE_PREVIEW) return;
       supabase
         .from('analytics_events')
         .insert([{

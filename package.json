@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ios:sync": "npm run build && cap sync ios && python3 scripts/check_ios.py",
-    "ios:check": "python3 scripts/check_ios.py"
+    "ios:check": "python3 scripts/check_ios.py",
+    "dev:next": "VITE_STYLST_NEXT_RELEASE=true vite"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",

@@ -11,6 +11,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import DeepLinkHandler from "@/components/DeepLinkHandler";
 import AIConsentDialog from "@/components/AIConsentDialog";
+import { NEXT_RELEASE_ENABLED } from "@/lib/next-release";
+const TryOn = lazy(() => import("@/pages/TryOn"));
+const Me = lazy(() => import("@/pages/Me"));
 
 // Eagerly load landing & auth (critical path)
 import Landing from "@/pages/Landing";
@@ -107,6 +110,8 @@ const AppRoutes = () => (
     <Route path="/looks/:lookId" element={<ProtectedRoute><LookDetail /></ProtectedRoute>} />
     <Route path="/ai-stylist" element={<ProtectedRoute><AIStylist /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+    {NEXT_RELEASE_ENABLED && <Route path="/try-on" element={<ProtectedRoute><TryOn /></ProtectedRoute>} />}
+    {NEXT_RELEASE_ENABLED && <Route path="/me" element={<ProtectedRoute><Me /></ProtectedRoute>} />}
     <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
